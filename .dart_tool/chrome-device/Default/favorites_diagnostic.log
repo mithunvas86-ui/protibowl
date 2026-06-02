@@ -1,0 +1,103 @@
+2026-05-29 17:46:42.143: [INFO] VisibilityChanged: 0
+2026-05-29 17:46:42.184: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-05-29 17:46:42.186: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-05-29 17:46:42.188: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-05-29 17:46:42.190: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-05-29 17:46:42.192: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-05-29 17:46:42.194: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-05-29 17:46:42.197: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-05-29 17:46:42.198: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-05-29 17:46:42.200: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-05-29 17:46:42.202: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-05-29 17:46:42.204: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-05-29 17:46:42.205: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-05-29 17:46:42.220: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-05-29 17:46:42.220: [INFO] OnDoneLoading sync enabled: 0
+2026-05-29 17:46:42.226: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-05-29 17:46:43.627: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-05-29 17:46:43.632: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-05-29 17:46:43.634: [INFO] Primary account changed.
+2026-05-29 17:46:43.634: [INFO] OnPrimaryAccountChanged PrimaryAccountChangeEvent::Type::kSet
+2026-05-29 17:46:43.639: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-05-29 17:46:43.664: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 3
+2026-05-29 17:46:45.639: [INFO] Sync initialization duration: 1899ms
+2026-05-29 17:50:07.776: [INFO] VisibilityChanged: 0
+2026-05-29 17:50:07.838: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-05-29 17:50:07.838: [INFO] OnDoneLoading sync enabled: 1
+2026-05-29 17:50:14.427: [INFO] Sync initialization duration: 832ms
+2026-05-29 18:05:35.686: [INFO] VisibilityChanged: 0
+2026-05-29 18:05:35.750: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-05-29 18:05:35.750: [INFO] OnDoneLoading sync enabled: 0
+2026-05-29 18:05:37.291: [INFO] Primary account changed.
+2026-05-29 18:05:37.291: [INFO] OnPrimaryAccountChanged PrimaryAccountChangeEvent::Type::kSet
+2026-05-29 18:05:39.311: [INFO] Sync initialization duration: 3558ms
+2026-05-29 18:26:45.489: [INFO] VisibilityChanged: 0
+2026-05-29 18:26:45.553: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-05-29 18:26:45.553: [INFO] OnDoneLoading sync enabled: 1
+2026-05-29 18:26:54.456: [INFO] Sync initialization duration: 1818ms
+2026-05-30 05:34:27.032: [INFO] VisibilityChanged: 0
+2026-05-30 05:34:27.109: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-05-30 05:34:27.109: [INFO] OnDoneLoading sync enabled: 0
+2026-05-30 05:34:29.476: [INFO] Primary account changed.
+2026-05-30 05:34:29.476: [INFO] OnPrimaryAccountChanged PrimaryAccountChangeEvent::Type::kSet
+2026-05-30 05:34:31.730: [INFO] Sync initialization duration: 4617ms
+2026-05-30 06:02:26.328: [INFO] VisibilityChanged: 0
+2026-05-30 06:02:26.401: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-05-30 06:02:26.401: [INFO] OnDoneLoading sync enabled: 1
+2026-05-30 06:02:34.635: [INFO] Sync initialization duration: 1031ms
+2026-05-30 06:55:20.119: [INFO] VisibilityChanged: 0
+2026-05-30 06:55:20.351: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-05-30 06:55:20.351: [INFO] OnDoneLoading sync enabled: 0
+2026-05-30 06:55:23.530: [INFO] Primary account changed.
+2026-05-30 06:55:23.530: [INFO] OnPrimaryAccountChanged PrimaryAccountChangeEvent::Type::kSet
+2026-05-30 06:55:25.643: [INFO] Sync initialization duration: 5282ms
+2026-05-30 07:30:56.575: [INFO] VisibilityChanged: 0
+2026-05-30 07:30:56.663: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-05-30 07:30:56.663: [INFO] OnDoneLoading sync enabled: 1
+2026-05-30 07:31:04.627: [INFO] Sync initialization duration: 794ms
+2026-05-30 08:14:17.559: [INFO] VisibilityChanged: 0
+2026-05-30 08:14:17.674: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-05-30 08:14:17.674: [INFO] OnDoneLoading sync enabled: 0
+2026-05-30 08:14:20.366: [INFO] Primary account changed.
+2026-05-30 08:14:20.366: [INFO] OnPrimaryAccountChanged PrimaryAccountChangeEvent::Type::kSet
+2026-05-30 08:14:22.502: [INFO] Sync initialization duration: 4824ms
+2026-05-30 08:32:09.326: [INFO] VisibilityChanged: 0
+2026-05-30 08:32:09.473: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-05-30 08:32:09.473: [INFO] OnDoneLoading sync enabled: 1
+2026-05-30 08:32:19.964: [INFO] Sync initialization duration: 1004ms
+2026-05-30 09:59:37.231: [INFO] VisibilityChanged: 0
+2026-05-30 09:59:37.345: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-05-30 09:59:37.345: [INFO] OnDoneLoading sync enabled: 0
+2026-05-30 09:59:39.294: [INFO] Primary account changed.
+2026-05-30 09:59:39.294: [INFO] OnPrimaryAccountChanged PrimaryAccountChangeEvent::Type::kSet
+2026-05-30 09:59:42.506: [INFO] Sync initialization duration: 5161ms
+2026-05-30 10:01:58.878: [INFO] VisibilityChanged: 0
+2026-05-30 10:01:58.979: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-05-30 10:01:58.979: [INFO] OnDoneLoading sync enabled: 1
+2026-05-30 10:02:09.486: [INFO] Sync initialization duration: 1923ms
+2026-05-30 11:52:25.021: [INFO] VisibilityChanged: 0
+2026-05-30 11:52:25.105: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-05-30 11:52:25.105: [INFO] OnDoneLoading sync enabled: 0
+2026-05-30 11:52:28.878: [INFO] Primary account changed.
+2026-05-30 11:52:28.878: [INFO] OnPrimaryAccountChanged PrimaryAccountChangeEvent::Type::kSet
+2026-05-30 11:52:30.999: [INFO] Sync initialization duration: 5889ms
+2026-05-30 11:58:20.103: [INFO] VisibilityChanged: 0
+2026-05-30 11:58:20.167: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-05-30 11:58:20.167: [INFO] OnDoneLoading sync enabled: 1
+2026-05-30 11:58:26.432: [INFO] Sync initialization duration: 949ms
+2026-05-30 15:44:17.035: [INFO] VisibilityChanged: 0
+2026-05-30 15:44:17.229: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-05-30 15:44:17.229: [INFO] OnDoneLoading sync enabled: 0
+2026-05-30 15:44:20.872: [INFO] Primary account changed.
+2026-05-30 15:44:20.872: [INFO] OnPrimaryAccountChanged PrimaryAccountChangeEvent::Type::kSet
+2026-05-30 15:44:24.900: [INFO] Sync initialization duration: 7660ms
+2026-05-31 06:54:38.731: [INFO] VisibilityChanged: 0
+2026-05-31 06:54:38.861: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-05-31 06:54:38.861: [INFO] OnDoneLoading sync enabled: 1
+2026-05-31 06:54:50.058: [INFO] Sync initialization duration: 1313ms
+2026-05-31 07:17:04.805: [INFO] VisibilityChanged: 0
+2026-05-31 07:17:05.143: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-05-31 07:17:05.143: [INFO] OnDoneLoading sync enabled: 0
+2026-05-31 07:17:08.144: [INFO] Primary account changed.
+2026-05-31 07:17:08.144: [INFO] OnPrimaryAccountChanged PrimaryAccountChangeEvent::Type::kSet
+2026-05-31 07:17:10.168: [INFO] Sync initialization duration: 5022ms
