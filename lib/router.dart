@@ -1,0 +1,67 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'pages/home_page.dart';
+import 'pages/product_detail_page.dart';
+import 'pages/order_form_page.dart';
+import 'pages/confirmation_page.dart';
+import 'pages/orders_page.dart';
+import 'pages/order_tracking_page.dart';
+import 'pages/customer_info_page.dart';
+import 'providers/customer_info_provider.dart';
+
+String? _redirectLogic(BuildContext context, GoRouterState state) {
+  final customerInfo = context.read<CustomerInfoProvider>();
+
+  // Redirect away from customer-info if already filled
+  if (customerInfo.isInfoComplete && state.matchedLocation == '/customer-info') {
+    return '/';
+  }
+
+  return null;
+}
+
+final router = GoRouter(
+  initialLocation: '/',
+  redirect: _redirectLogic,
+  routes: [
+    GoRoute(
+      path: '/customer-info',
+      builder: (context, state) => const CustomerInfoPage(),
+    ),
+    GoRoute(
+      path: '/',
+      builder: (context, state) => const HomePage(),
+    ),
+    GoRoute(
+      path: '/menu',
+      builder: (context, state) => const HomePage(initialTab: 1),
+    ),
+    GoRoute(
+      path: '/product/:id',
+      builder: (context, state) => ProductDetailPage(
+        itemId: state.pathParameters['id']!,
+        tableId: state.uri.queryParameters['table'] ?? '',
+      ),
+    ),
+    GoRoute(
+      path: '/order',
+      builder: (context, state) => const OrderFormPage(),
+    ),
+    GoRoute(
+      path: '/confirmation',
+      builder: (context, state) {
+        final orderId = state.uri.queryParameters['orderId'] ?? '';
+        return ConfirmationPage(orderId: orderId);
+      },
+    ),
+    GoRoute(
+      path: '/orders',
+      builder: (context, state) => const OrdersPage(),
+    ),
+    GoRoute(
+      path: '/my-orders',
+      builder: (context, state) => const OrderTrackingPage(),
+    ),
+  ],
+);
