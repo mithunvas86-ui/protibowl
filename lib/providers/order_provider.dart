@@ -17,10 +17,13 @@ class OrderProvider extends ChangeNotifier {
   Future<String> _generateOrderId() async {
     try {
       final result = await SupabaseService.client.rpc('get_next_order_number');
-      if (result != null && result.toString().length == 6) {
-        return result.toString();
+      if (result != null) {
+        final str = result.toString().trim();
+        if (str.length >= 6) return str.substring(0, 6);
       }
-    } catch (_) {}
+    } catch (e) {
+      print('Order ID RPC failed: $e');
+    }
     return _localStorage.generateOrderId();
   }
 
