@@ -49,24 +49,42 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
           }
 
           if (provider.orders.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+            return RefreshIndicator(
+              onRefresh: () => context.read<OrderProvider>().fetchOrders(),
+              color: BauhausTheme.primaryBlack,
+              child: ListView(
                 children: [
-                  const Icon(Icons.receipt_outlined,
-                      size: 64, color: Colors.grey),
-                  const SizedBox(height: 16),
-                  Text(
-                    'NO ORDERS YET',
-                    style: GoogleFonts.chivo(
-                        fontSize: 18, fontWeight: FontWeight.w700),
+                  SizedBox(
+                    height: MediaQuery.of(context).size.height * 0.6,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.receipt_outlined,
+                            size: 64, color: Colors.grey),
+                        const SizedBox(height: 16),
+                        Text(
+                          'NO ORDERS YET',
+                          style: GoogleFonts.chivo(
+                              fontSize: 18, fontWeight: FontWeight.w700),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Pull down to refresh',
+                          style: GoogleFonts.chivo(
+                              fontSize: 13, color: Colors.grey),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
             );
           }
 
-          return ListView.builder(
+          return RefreshIndicator(
+            onRefresh: () => context.read<OrderProvider>().fetchOrders(),
+            color: BauhausTheme.primaryBlack,
+            child: ListView.builder(
             padding: const EdgeInsets.all(16),
             itemCount: provider.orders.length,
             itemBuilder: (context, index) {
@@ -178,6 +196,7 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
                 ),
               );
             },
+          ),
           );
         },
       ),
