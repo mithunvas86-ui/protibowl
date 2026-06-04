@@ -14,19 +14,6 @@ class OrderProvider extends ChangeNotifier {
   List<Map<String, dynamic>> get orders => _orders;
   bool get isLoading => _isLoading;
 
-  Future<String> _generateOrderId() async {
-    try {
-      final result = await SupabaseService.client.rpc('get_next_order_number');
-      if (result != null) {
-        final str = result.toString().trim();
-        if (str.length >= 6) return str.substring(0, 6);
-      }
-    } catch (e) {
-      print('Order ID RPC failed: $e');
-    }
-    return _localStorage.generateOrderId();
-  }
-
   Future<String> createOrder({
     required String customerName,
     required String customerPhone,
@@ -36,7 +23,6 @@ class OrderProvider extends ChangeNotifier {
     required double totalPrice,
   }) async {
     try {
-      final orderId = await _generateOrderId();
       final customerId = _guestCustomerTracking.generateCustomerId();
       final createdAt = DateTime.now().toIso8601String();
 
@@ -46,13 +32,13 @@ class OrderProvider extends ChangeNotifier {
         orderType: orderType,
       );
 
-      // 1. Save to Supabase FIRST so we get the UUID back
+      // 1. Save to Supabase — trigger auto-assigns order_number
       String? supabaseId;
+      String orderId = await _localStorage.generateOrderId(); // local fallback
       try {
         final res = await SupabaseService.client
             .from(SupabaseService.tableOrders)
             .insert({
-              'order_number': orderId,
               'order_type': orderType,
               'customer_name': customerName,
               'customer_phone': customerPhone,
@@ -67,9 +53,14 @@ class OrderProvider extends ChangeNotifier {
               'items': items,
               'created_at': createdAt,
             })
-            .select('id')
+            .select('id, order_number')
             .single();
         supabaseId = res['id'] as String;
+        // Use the DB-generated order number
+        final dbNumber = res['order_number'] as String?;
+        if (dbNumber != null && dbNumber.length == 6) {
+          orderId = dbNumber;
+        }
 
         for (final item in items) {
           await SupabaseService.client
