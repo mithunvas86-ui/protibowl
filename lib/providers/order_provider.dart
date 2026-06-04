@@ -14,6 +14,26 @@ class OrderProvider extends ChangeNotifier {
   List<Map<String, dynamic>> get orders => _orders;
   bool get isLoading => _isLoading;
 
+  Future<String> _generateOrderId() async {
+    final now = DateTime.now();
+    final todayStart = DateTime(now.year, now.month, now.day).toUtc().toIso8601String();
+    final tomorrowStart = DateTime(now.year, now.month, now.day + 1).toUtc().toIso8601String();
+    try {
+      final response = await SupabaseService.client
+          .from(SupabaseService.tableOrders)
+          .select('id')
+          .gte('created_at', todayStart)
+          .lt('created_at', tomorrowStart);
+      final count = (response as List).length + 1;
+      final dd = now.day.toString().padLeft(2, '0');
+      final mm = now.month.toString().padLeft(2, '0');
+      final cc = count.toString().padLeft(2, '0');
+      return '$dd$mm$cc';
+    } catch (_) {
+      return _localStorage.generateOrderId();
+    }
+  }
+
   Future<String> createOrder({
     required String customerName,
     required String customerPhone,
@@ -23,7 +43,7 @@ class OrderProvider extends ChangeNotifier {
     required double totalPrice,
   }) async {
     try {
-      final orderId = await _localStorage.generateOrderId();
+      final orderId = await _generateOrderId();
       final customerId = _guestCustomerTracking.generateCustomerId();
       final createdAt = DateTime.now().toIso8601String();
 
