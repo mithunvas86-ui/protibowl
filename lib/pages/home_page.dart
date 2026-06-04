@@ -245,20 +245,24 @@ class _HomePageState extends State<HomePage> {
                                 ? 2
                                 : 3;
                         final crossSpacing = cols > 1 ? 12.0 : 0.0;
-                        return GridView.builder(
-                          padding: const EdgeInsets.all(16),
-                          gridDelegate:
-                              SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: cols,
-                            mainAxisSpacing: 12,
-                            crossAxisSpacing: crossSpacing,
-                            mainAxisExtent: 400,
+                        return RefreshIndicator(
+                          onRefresh: () => menuProvider.fetchAll(),
+                          color: BauhausTheme.primaryBlack,
+                          child: GridView.builder(
+                            padding: const EdgeInsets.all(16),
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: cols,
+                              mainAxisSpacing: 12,
+                              crossAxisSpacing: crossSpacing,
+                              mainAxisExtent: 400,
+                            ),
+                            itemCount: menuProvider.filteredItems.length,
+                            itemBuilder: (context, index) {
+                              final item = menuProvider.filteredItems[index];
+                              return _BauhausMenuCard(item: item);
+                            },
                           ),
-                          itemCount: menuProvider.filteredItems.length,
-                          itemBuilder: (context, index) {
-                            final item = menuProvider.filteredItems[index];
-                            return _BauhausMenuCard(item: item);
-                          },
                         );
                       },
                     ),

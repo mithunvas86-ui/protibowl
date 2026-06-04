@@ -16,17 +16,24 @@ class OrderProvider extends ChangeNotifier {
 
   Future<String> _generateOrderId() async {
     final now = DateTime.now();
-    final todayStart = DateTime(now.year, now.month, now.day).toUtc().toIso8601String();
-    final tomorrowStart = DateTime(now.year, now.month, now.day + 1).toUtc().toIso8601String();
+    final dd = now.day.toString().padLeft(2, '0');
+    final mm = now.month.toString().padLeft(2, '0');
+    final todayPrefix = '$dd$mm';
     try {
       final response = await SupabaseService.client
           .from(SupabaseService.tableOrders)
-          .select('id')
-          .gte('created_at', todayStart)
-          .lt('created_at', tomorrowStart);
-      final count = (response as List).length + 1;
-      final dd = now.day.toString().padLeft(2, '0');
-      final mm = now.month.toString().padLeft(2, '0');
+          .select('order_number')
+          .like('order_number', '$todayPrefix%')
+          .order('order_number', ascending: false)
+          .limit(1);
+      int count = 1;
+      if ((response as List).isNotEmpty) {
+        final lastNumber = response[0]['order_number'] as String? ?? '';
+        if (lastNumber.length >= 6) {
+          final lastCount = int.tryParse(lastNumber.substring(4)) ?? 0;
+          count = lastCount + 1;
+        }
+      }
       final cc = count.toString().padLeft(2, '0');
       return '$dd$mm$cc';
     } catch (_) {

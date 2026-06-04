@@ -53,11 +53,13 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.receipt_outlined, size: 64, color: Colors.grey),
+                  const Icon(Icons.receipt_outlined,
+                      size: 64, color: Colors.grey),
                   const SizedBox(height: 16),
                   Text(
                     'NO ORDERS YET',
-                    style: GoogleFonts.chivo(fontSize: 18, fontWeight: FontWeight.w700),
+                    style: GoogleFonts.chivo(
+                        fontSize: 18, fontWeight: FontWeight.w700),
                   ),
                 ],
               ),
@@ -69,14 +71,16 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
             itemCount: provider.orders.length,
             itemBuilder: (context, index) {
               final order = provider.orders[index];
-              final items = (order['items'] ?? order['order_items'] ?? []) as List;
+              final items =
+                  (order['items'] ?? order['order_items'] ?? []) as List;
               final status = order['status'] ?? 'pending';
               final statusColor = _getStatusColor(status);
 
               return Container(
                 margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
-                  border: Border.all(color: BauhausTheme.primaryBlack, width: 2),
+                  border:
+                      Border.all(color: BauhausTheme.primaryBlack, width: 2),
                   color: BauhausTheme.white,
                 ),
                 child: Column(
@@ -137,8 +141,9 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
                                 style: GoogleFonts.chivo(fontSize: 12),
                               ),
                             );
-                          }).toList(),
-                          if (order['special_instructions']?.isNotEmpty ?? false) ...[
+                          }),
+                          if (order['special_instructions']?.isNotEmpty ??
+                              false) ...[
                             const SizedBox(height: 8),
                             Container(
                               padding: const EdgeInsets.all(8),
