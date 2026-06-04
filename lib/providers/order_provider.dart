@@ -32,34 +32,49 @@ class OrderProvider extends ChangeNotifier {
         orderType: orderType,
       );
 
-      // 1. Save to Supabase — trigger auto-assigns order_number
       String? supabaseId;
-      String orderId = await _localStorage.generateOrderId(); // local fallback
+      String orderId = await _localStorage.generateOrderId(); // final fallback
+
+      // Layer 1: try RPC for atomic sequential number
+      String? rpcNumber;
       try {
+        final rpcResult =
+            await SupabaseService.client.rpc('get_next_order_number');
+        final str = rpcResult?.toString().trim() ?? '';
+        if (str.length == 6) rpcNumber = str;
+      } catch (_) {}
+
+      // Layer 2: insert to Supabase; trigger sets order_number if RPC failed
+      try {
+        final insertData = <String, dynamic>{
+          'order_type': orderType,
+          'customer_name': customerName,
+          'customer_phone': customerPhone,
+          'payment_method': paymentMethod,
+          'total_price': totalPrice,
+          'status': 'pending',
+          'customer_info': {
+            'name': customerName,
+            'phone': customerPhone,
+            'order_type': orderType,
+          },
+          'items': items,
+          'created_at': createdAt,
+        };
+        if (rpcNumber != null) insertData['order_number'] = rpcNumber;
+
         final res = await SupabaseService.client
             .from(SupabaseService.tableOrders)
-            .insert({
-              'order_type': orderType,
-              'customer_name': customerName,
-              'customer_phone': customerPhone,
-              'payment_method': paymentMethod,
-              'total_price': totalPrice,
-              'status': 'pending',
-              'customer_info': {
-                'name': customerName,
-                'phone': customerPhone,
-                'order_type': orderType,
-              },
-              'items': items,
-              'created_at': createdAt,
-            })
+            .insert(insertData)
             .select('id, order_number')
             .single();
+
         supabaseId = res['id'] as String;
-        // Use the DB-generated order number
         final dbNumber = res['order_number'] as String?;
         if (dbNumber != null && dbNumber.length == 6) {
-          orderId = dbNumber;
+          orderId = dbNumber; // DB value (trigger or RPC)
+        } else if (rpcNumber != null) {
+          orderId = rpcNumber;
         }
 
         for (final item in items) {
@@ -74,6 +89,8 @@ class OrderProvider extends ChangeNotifier {
               });
         }
       } catch (e) {
+        // Layer 3: full local fallback — use RPC number if we got one
+        if (rpcNumber != null) orderId = rpcNumber;
         print('⚠️ Supabase write failed: $e');
       }
 
