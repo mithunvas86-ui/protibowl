@@ -15,30 +15,13 @@ class OrderProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
 
   Future<String> _generateOrderId() async {
-    final now = DateTime.now();
-    final dd = now.day.toString().padLeft(2, '0');
-    final mm = now.month.toString().padLeft(2, '0');
-    final todayPrefix = '$dd$mm';
     try {
-      final response = await SupabaseService.client
-          .from(SupabaseService.tableOrders)
-          .select('order_number')
-          .like('order_number', '$todayPrefix%')
-          .order('order_number', ascending: false)
-          .limit(1);
-      int count = 1;
-      if ((response as List).isNotEmpty) {
-        final lastNumber = response[0]['order_number'] as String? ?? '';
-        if (lastNumber.length >= 6) {
-          final lastCount = int.tryParse(lastNumber.substring(4)) ?? 0;
-          count = lastCount + 1;
-        }
+      final result = await SupabaseService.client.rpc('get_next_order_number');
+      if (result != null && result.toString().length == 6) {
+        return result.toString();
       }
-      final cc = count.toString().padLeft(2, '0');
-      return '$dd$mm$cc';
-    } catch (_) {
-      return _localStorage.generateOrderId();
-    }
+    } catch (_) {}
+    return _localStorage.generateOrderId();
   }
 
   Future<String> createOrder({
