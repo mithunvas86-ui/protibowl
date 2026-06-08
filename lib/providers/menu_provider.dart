@@ -46,7 +46,6 @@ class MenuProvider extends ChangeNotifier {
       final response = await SupabaseService.client
           .from(SupabaseService.tableMenuItems)
           .select()
-          .eq('available', true)
           .order('category');
 
       _items = (response as List)

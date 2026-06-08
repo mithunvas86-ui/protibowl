@@ -133,6 +133,23 @@ class OrderProvider extends ChangeNotifier {
         totalSpent: totalPrice,
       );
 
+      // Increment per-item order count (for daily limit enforcement)
+      final today = DateTime.now();
+      final todayStr =
+          '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+      for (final item in items) {
+        final menuItemId = item['menu_item_id'] as String?;
+        final qty = (item['quantity'] as int?) ?? 1;
+        if (menuItemId == null) continue;
+        try {
+          await SupabaseService.client.rpc('increment_item_order_count', params: {
+            'p_item_id': menuItemId,
+            'p_quantity': qty,
+            'p_date': todayStr,
+          });
+        } catch (_) {}
+      }
+
       await fetchOrders();
       return orderId;
     } catch (e) {

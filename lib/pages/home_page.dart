@@ -466,6 +466,28 @@ class _BauhausMenuCardState extends State<_BauhausMenuCard> {
                                       color: BauhausTheme.mediumGrey),
                                 ),
                         ),
+                        // Sold-out overlay
+                        if (widget.item.isSoldOut)
+                          Positioned.fill(
+                            child: Container(
+                              color: Colors.black.withValues(alpha: 0.58),
+                              alignment: Alignment.center,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.notifications_off,
+                                      color: Colors.white, size: 34),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'SOLD OUT',
+                                    style: _sg(13, FontWeight.w800,
+                                        Colors.white,
+                                        spacing: 2),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         // Price block — bottom left (yellow)
                         Positioned(
                           bottom: 0,
@@ -571,7 +593,29 @@ class _BauhausMenuCardState extends State<_BauhausMenuCard> {
                         ),
 
                         // ── CART CONTROL ──────────────────────────
-                        qty == 0
+                        widget.item.isSoldOut
+                            ? Container(
+                                width: double.infinity,
+                                height: 42,
+                                color: Colors.grey.shade400,
+                                alignment: Alignment.center,
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(Icons.notifications_off,
+                                        color: Colors.white, size: 15),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      'NOT AVAILABLE',
+                                      style: _sg(11, FontWeight.w800,
+                                          Colors.white,
+                                          spacing: 0.8),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : qty == 0
                             ? MouseRegion(
                                 cursor: SystemMouseCursors.click,
                                 onEnter: (_) =>
