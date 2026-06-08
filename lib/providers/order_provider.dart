@@ -33,7 +33,7 @@ class OrderProvider extends ChangeNotifier {
       );
 
       String? supabaseId;
-      String orderId = await _localStorage.generateOrderId(); // final fallback
+      String orderId = await _localStorage.generateOrderId(customerPhone: customerPhone); // final fallback
 
       // Layer 1: try RPC for atomic sequential number
       String? rpcNumber;
@@ -145,6 +145,7 @@ class OrderProvider extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
+      await _sharedOrders.init(); // ensure _prefs is initialized after hot-reload or web refresh
       _orders = _sharedOrders.getAllOrders();
       _orders.sort((a, b) => DateTime.parse(b['created_at'] as String)
           .compareTo(DateTime.parse(a['created_at'] as String)));
@@ -179,6 +180,36 @@ class OrderProvider extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       print('Error updating order status: $e');
+    }
+  }
+
+  Future<bool> cancelOrder(String orderId) async {
+    try {
+      // Find the order to get its Supabase UUID
+      final order = _orders.firstWhere(
+        (o) => o['id'] == orderId,
+        orElse: () => {},
+      );
+      final supabaseId = order['supabase_id'] as String?;
+
+      // Update in Supabase if we have the UUID
+      if (supabaseId != null) {
+        try {
+          await SupabaseService.client
+              .from(SupabaseService.tableOrders)
+              .update({'status': 'cancelled'})
+              .eq('id', supabaseId);
+        } catch (e) {
+          print('⚠️ Supabase cancel failed: $e');
+        }
+      }
+
+      await _sharedOrders.updateOrderStatus(orderId, 'cancelled');
+      await fetchOrders();
+      return true;
+    } catch (e) {
+      print('Error cancelling order: $e');
+      return false;
     }
   }
 

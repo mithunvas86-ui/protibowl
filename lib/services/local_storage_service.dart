@@ -102,19 +102,28 @@ class LocalStorageService {
     await _prefs.remove('cart');
   }
 
-  // Generate order ID in format DDMMCC (day + month + daily count)
-  // e.g. first order on June 1 → 010601
-  Future<String> generateOrderId() async {
+  // Generate order ID in format DDMMCC (day + month + per-customer count)
+  // Count resets to 1 for each new customer (identified by phone number)
+  Future<String> generateOrderId({String? customerPhone}) async {
     final now = DateTime.now();
     final todayKey =
         '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
 
     final lastDate = _prefs.getString('last_order_date') ?? '';
+    final lastPhone = _prefs.getString('last_order_phone') ?? '';
     int count = _prefs.getInt('daily_order_count') ?? 0;
 
-    if (lastDate != todayKey) {
+    final isNewDay = lastDate != todayKey;
+    final isNewCustomer = customerPhone != null &&
+        customerPhone.isNotEmpty &&
+        customerPhone != lastPhone;
+
+    if (isNewDay || isNewCustomer) {
       count = 0;
       await _prefs.setString('last_order_date', todayKey);
+      if (customerPhone != null && customerPhone.isNotEmpty) {
+        await _prefs.setString('last_order_phone', customerPhone);
+      }
     }
 
     count++;
