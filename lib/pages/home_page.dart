@@ -72,29 +72,36 @@ class _HomePageState extends State<HomePage> {
             color: BauhausTheme.primaryBlack,
           ),
         ),
-        title: RichText(
-          text: TextSpan(
-            children: [
-              TextSpan(
-                text: 'PROTI ',
-                style: GoogleFonts.spaceGrotesk(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  color: BauhausTheme.primaryBlack,
-                  letterSpacing: 1.5,
-                ),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'PROTI',
+              style: GoogleFonts.spaceGrotesk(
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                color: BauhausTheme.primaryBlack,
+                letterSpacing: 1.5,
               ),
-              TextSpan(
-                text: 'BOWL',
-                style: GoogleFonts.spaceGrotesk(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  color: BauhausTheme.accentRed,
-                  letterSpacing: 1.5,
-                ),
+            ),
+            const SizedBox(width: 6),
+            Image.asset(
+              'assets/images/logo.png',
+              height: 32,
+              width: 32,
+              fit: BoxFit.contain,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              'BOWL',
+              style: GoogleFonts.spaceGrotesk(
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                color: BauhausTheme.accentRed,
+                letterSpacing: 1.5,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
         actions: [
           IconButton(
