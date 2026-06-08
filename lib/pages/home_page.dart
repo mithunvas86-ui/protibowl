@@ -72,11 +72,29 @@ class _HomePageState extends State<HomePage> {
             color: BauhausTheme.primaryBlack,
           ),
         ),
-        title: SizedBox(
-          height: 52,
-          width: 180,
-          child: Image.asset('assets/images/logo.png',
-              fit: BoxFit.contain),
+        title: RichText(
+          text: TextSpan(
+            children: [
+              TextSpan(
+                text: 'PROTI ',
+                style: GoogleFonts.spaceGrotesk(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: BauhausTheme.primaryBlack,
+                  letterSpacing: 1.5,
+                ),
+              ),
+              TextSpan(
+                text: 'BOWL',
+                style: GoogleFonts.spaceGrotesk(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: BauhausTheme.accentRed,
+                  letterSpacing: 1.5,
+                ),
+              ),
+            ],
+          ),
         ),
         actions: [
           IconButton(
