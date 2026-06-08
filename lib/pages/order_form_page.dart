@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
@@ -17,17 +18,29 @@ class OrderFormPage extends StatefulWidget {
 class _OrderFormPageState extends State<OrderFormPage> {
   bool _isSubmitting = false;
 
+  TextStyle _sg(double size, FontWeight weight, Color color,
+          {double? spacing}) =>
+      GoogleFonts.spaceGrotesk(
+          fontSize: size,
+          fontWeight: weight,
+          color: color,
+          letterSpacing: spacing);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(
           'ORDER SUMMARY',
-          style: GoogleFonts.chivo(
-              fontSize: 28, fontWeight: FontWeight.w800, letterSpacing: 0.5),
+          style: _sg(22, FontWeight.w800, BauhausTheme.primaryBlack,
+              spacing: 0.5),
         ),
         backgroundColor: BauhausTheme.white,
         elevation: 0,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(2),
+          child: Container(height: 2, color: BauhausTheme.primaryBlack),
+        ),
       ),
       body: Consumer<CartProvider>(
         builder: (context, cart, _) {
@@ -39,7 +52,8 @@ class _OrderFormPageState extends State<OrderFormPage> {
                   const Icon(Icons.shopping_cart_outlined,
                       size: 64, color: Colors.grey),
                   const SizedBox(height: 16),
-                  Text('Cart is empty', style: GoogleFonts.chivo(fontSize: 18)),
+                  Text('Cart is empty',
+                      style: _sg(18, FontWeight.w600, Colors.grey)),
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () => context.go('/'),
@@ -55,155 +69,127 @@ class _OrderFormPageState extends State<OrderFormPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Order Items Section
-                Text(
-                  'ORDER ITEMS',
-                  style: GoogleFonts.chivo(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: BauhausTheme.primaryBlack,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 12),
+                // ── ORDER ITEMS ───────────────────────────────────
+                Text('ORDER ITEMS',
+                    style: _sg(13, FontWeight.w700,
+                        BauhausTheme.primaryBlack,
+                        spacing: 0.5)),
+                const SizedBox(height: 10),
                 Container(
-                  decoration: BoxDecoration(
-                    border:
-                        Border.all(color: BauhausTheme.primaryBlack, width: 1),
+                  decoration: const BoxDecoration(
+                    border: Border.fromBorderSide(
+                        BorderSide(color: BauhausTheme.primaryBlack, width: 2)),
                   ),
                   child: Column(
                     children: cart.items.asMap().entries.map((entry) {
                       final index = entry.key;
-                      final cartItem = entry.value;
+                      final ci = entry.value;
                       final isLast = index == cart.items.length - 1;
-
                       return Column(
                         children: [
                           Padding(
-                            padding: const EdgeInsets.all(12),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 10),
                             child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              mainAxisAlignment:
+                                  MainAxisAlignment.spaceBetween,
                               children: [
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
+                                      Text(ci.item.name.toUpperCase(),
+                                          style: _sg(12, FontWeight.w700,
+                                              BauhausTheme.primaryBlack)),
                                       Text(
-                                        cartItem.item.name.toUpperCase(),
-                                        style: GoogleFonts.chivo(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w700,
-                                          color: BauhausTheme.primaryBlack,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        'x${cartItem.quantity} @ ₹${cartItem.item.price.toStringAsFixed(0)}',
-                                        style: GoogleFonts.chivo(
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w500,
-                                          color: BauhausTheme.mediumGrey,
-                                        ),
-                                      ),
+                                          'x${ci.quantity} @ ₹${ci.item.price.toStringAsFixed(0)}',
+                                          style: _sg(11, FontWeight.w400,
+                                              BauhausTheme.mediumGrey)),
                                     ],
                                   ),
                                 ),
                                 Text(
-                                  '₹${cartItem.subtotal.toStringAsFixed(0)}',
-                                  style: GoogleFonts.chivo(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w800,
-                                    color: BauhausTheme.accentRed,
-                                  ),
+                                  '₹${ci.subtotal.toStringAsFixed(0)}',
+                                  style: _sg(13, FontWeight.w800,
+                                      BauhausTheme.accentRed),
                                 ),
                               ],
                             ),
                           ),
                           if (!isLast)
                             const Divider(
-                              color: BauhausTheme.primaryBlack,
-                              thickness: 1,
-                              height: 0,
-                            ),
+                                color: BauhausTheme.primaryBlack,
+                                thickness: 1,
+                                height: 0),
                         ],
                       );
                     }).toList(),
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
 
-                // Total Section
+                // ── TOTAL ─────────────────────────────────────────
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    border: Border.all(color: BauhausTheme.accentRed, width: 2),
-                    color: BauhausTheme.accentRed.withValues(alpha: 0.1),
+                    border:
+                        Border.all(color: BauhausTheme.accentRed, width: 2),
+                    color:
+                        BauhausTheme.accentRed.withValues(alpha: 0.07),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        'TOTAL',
-                        style: GoogleFonts.chivo(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: BauhausTheme.primaryBlack,
-                          letterSpacing: 1,
-                        ),
-                      ),
-                      Text(
-                        '₹${cart.total.toStringAsFixed(0)}',
-                        style: GoogleFonts.chivo(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w800,
-                          color: BauhausTheme.accentRed,
-                        ),
-                      ),
+                      Text('TOTAL',
+                          style: _sg(16, FontWeight.w800,
+                              BauhausTheme.primaryBlack,
+                              spacing: 1)),
+                      Text('₹${cart.total.toStringAsFixed(0)}',
+                          style: _sg(22, FontWeight.w800,
+                              BauhausTheme.accentRed)),
                     ],
                   ),
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 28),
 
-                // Pay Button
                 BauhausButton(
                   label: 'PROCEED TO PAY',
                   onPressed: _isSubmitting
                       ? null
-                      : () => _showPaymentDialog(context, cart.total),
+                      : () => _showCustomerDialog(context, cart.total),
                   height: 48,
                 ),
                 const SizedBox(height: 12),
+
+                // Cancel
                 GestureDetector(
                   onTap: () async {
-                    final confirmed = await showDialog<bool>(
+                    final ok = await showDialog<bool>(
                       context: context,
                       builder: (ctx) => AlertDialog(
-                        title: Text(
-                          'CANCEL ORDER',
-                          style: GoogleFonts.chivo(fontWeight: FontWeight.w800),
-                        ),
+                        title: Text('CANCEL ORDER',
+                            style: _sg(
+                                16, FontWeight.w800, BauhausTheme.primaryBlack)),
                         content: Text(
-                          'Clear your cart and go back to the menu?',
-                          style: GoogleFonts.chivo(fontSize: 14),
-                        ),
+                            'Clear your cart and go back to the menu?',
+                            style: _sg(13, FontWeight.w400,
+                                BauhausTheme.primaryBlack)),
                         actions: [
                           TextButton(
-                            onPressed: () => Navigator.of(ctx).pop(false),
-                            child: Text('NO',
-                                style: GoogleFonts.chivo(color: Colors.grey)),
-                          ),
+                              onPressed: () => Navigator.pop(ctx, false),
+                              child: Text('NO',
+                                  style: _sg(13, FontWeight.w700,
+                                      BauhausTheme.mediumGrey))),
                           TextButton(
-                            onPressed: () => Navigator.of(ctx).pop(true),
-                            child: Text('YES, CANCEL',
-                                style: GoogleFonts.chivo(
-                                    color: Colors.red,
-                                    fontWeight: FontWeight.w700)),
-                          ),
+                              onPressed: () => Navigator.pop(ctx, true),
+                              child: Text('YES, CANCEL',
+                                  style: _sg(13, FontWeight.w700,
+                                      Colors.red))),
                         ],
                       ),
                     );
-                    if (confirmed == true && mounted) {
+                    if (ok == true && mounted) {
                       context.read<CartProvider>().clear();
                       context.go('/');
                     }
@@ -211,20 +197,13 @@ class _OrderFormPageState extends State<OrderFormPage> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     decoration: BoxDecoration(
-                      border:
-                          Border.all(color: Colors.red[700]!, width: 1.5),
-                      color: Colors.red.withOpacity(0.05),
+                      border: Border.all(color: Colors.red.shade700, width: 1.5),
+                      color: Colors.red.withValues(alpha: 0.05),
                     ),
                     child: Center(
-                      child: Text(
-                        'CANCEL ORDER',
-                        style: GoogleFonts.chivo(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.red[700],
-                          letterSpacing: 0.5,
-                        ),
-                      ),
+                      child: Text('CANCEL ORDER',
+                          style: _sg(13, FontWeight.w800, Colors.red.shade700,
+                              spacing: 0.5)),
                     ),
                   ),
                 ),
@@ -236,240 +215,472 @@ class _OrderFormPageState extends State<OrderFormPage> {
     );
   }
 
-  void _showPaymentDialog(BuildContext context, double totalAmount) {
-    late TextEditingController nameCtrl;
-    late TextEditingController phoneCtrl;
-    String? selectedOrderType;
-    String selectedPayment = 'cod';
+  void _showCustomerDialog(BuildContext context, double totalAmount) {
+    final nameCtrl = TextEditingController();
+    final phoneCtrl = TextEditingController();
+    final addressCtrl = TextEditingController();
+    final landmarkCtrl = TextEditingController();
+    final cityCtrl = TextEditingController();
+    final pincodeCtrl = TextEditingController();
 
-    nameCtrl = TextEditingController();
-    phoneCtrl = TextEditingController();
+    String? selectedOrderType;
+    String selectedPayment = 'online';
 
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: Text(
-            'CUSTOMER INFORMATION',
-            style: GoogleFonts.chivo(fontSize: 18, fontWeight: FontWeight.w800),
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Name Field
-                Text(
-                  'NAME',
-                  style: GoogleFonts.chivo(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: BauhausTheme.primaryBlack,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: nameCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Enter your name',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.zero),
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                  ),
-                ),
-                const SizedBox(height: 16),
+        builder: (ctx, setDialog) {
+          final isDelivery = selectedOrderType == 'delivery';
 
-                // Phone Field
-                Text(
-                  'PHONE NUMBER',
-                  style: GoogleFonts.chivo(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: BauhausTheme.primaryBlack,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: phoneCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Enter your phone number',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.zero),
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                  ),
-                ),
-                const SizedBox(height: 16),
+          // Force online payment for delivery
+          if (isDelivery && selectedPayment == 'cod') {
+            selectedPayment = 'online';
+          }
 
-                // Order Type
-                Text(
-                  'ORDER TYPE',
-                  style: GoogleFonts.chivo(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: BauhausTheme.primaryBlack,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  decoration: BoxDecoration(
-                    border:
-                        Border.all(color: BauhausTheme.primaryBlack, width: 2),
-                  ),
-                  child: Column(
-                    children: [
-                      RadioListTile<String>(
-                        title: const Text('DINE-IN'),
-                        value: 'dine_in',
-                        groupValue: selectedOrderType,
-                        onChanged: (value) =>
-                            setState(() => selectedOrderType = value),
-                      ),
-                      const Divider(
-                          height: 0,
-                          thickness: 1,
-                          color: BauhausTheme.primaryBlack),
-                      RadioListTile<String>(
-                        title: const Text('TAKEAWAY'),
-                        value: 'takeaway',
-                        groupValue: selectedOrderType,
-                        onChanged: (value) =>
-                            setState(() => selectedOrderType = value),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
+          return AlertDialog(
+            contentPadding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+            titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+            title: Text('CUSTOMER DETAILS',
+                style: GoogleFonts.spaceGrotesk(
+                    fontSize: 17, fontWeight: FontWeight.w800)),
+            content: SizedBox(
+              width: 480,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ── NAME ────────────────────────────────────
+                    _label('FULL NAME'),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: nameCtrl,
+                      textCapitalization: TextCapitalization.words,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(
+                            RegExp(r'[a-zA-Z ]')),
+                      ],
+                      decoration: _inputDeco('Enter your name'),
+                    ),
+                    const SizedBox(height: 14),
 
-                // Payment Method
-                Text(
-                  'PAYMENT METHOD',
-                  style: GoogleFonts.chivo(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: BauhausTheme.primaryBlack,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  decoration: BoxDecoration(
-                    border:
-                        Border.all(color: BauhausTheme.primaryBlack, width: 2),
-                  ),
-                  child: Column(
-                    children: [
-                      _PaymentTile(
-                        icon: '💵',
-                        label: 'CASH ON DELIVERY',
-                        sublabel: 'Pay when your order arrives',
-                        value: 'cod',
-                        selected: selectedPayment == 'cod',
-                        onTap: () => setState(() => selectedPayment = 'cod'),
+                    // ── PHONE ───────────────────────────────────
+                    _label('PHONE NUMBER'),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: phoneCtrl,
+                      keyboardType: TextInputType.number,
+                      maxLength: 10,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                      ],
+                      decoration: _inputDeco('10-digit mobile number',
+                          counter: true),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // ── ORDER TYPE ──────────────────────────────
+                    _label('ORDER TYPE'),
+                    const SizedBox(height: 6),
+                    Container(
+                      decoration: const BoxDecoration(
+                        border: Border.fromBorderSide(BorderSide(
+                            color: BauhausTheme.primaryBlack, width: 2)),
                       ),
-                      const Divider(
-                          height: 0,
-                          thickness: 1,
-                          color: BauhausTheme.primaryBlack),
-                      _PaymentTile(
-                        icon: '💳',
-                        label: 'ONLINE PAYMENT',
-                        sublabel: 'UPI / Card / Net Banking',
-                        value: 'online',
-                        selected: selectedPayment == 'online',
-                        onTap: () =>
-                            setState(() => selectedPayment = 'online'),
+                      child: Column(
+                        children: [
+                          _RadioRow(
+                            icon: Icons.restaurant,
+                            label: 'DINE IN',
+                            sublabel: 'Eat at the restaurant',
+                            value: 'dine_in',
+                            groupValue: selectedOrderType,
+                            onChanged: (v) =>
+                                setDialog(() => selectedOrderType = v),
+                          ),
+                          const Divider(
+                              height: 0,
+                              thickness: 1,
+                              color: BauhausTheme.primaryBlack),
+                          _RadioRow(
+                            icon: Icons.takeout_dining,
+                            label: 'TAKEAWAY',
+                            sublabel: 'Pick up your order',
+                            value: 'takeaway',
+                            groupValue: selectedOrderType,
+                            onChanged: (v) =>
+                                setDialog(() => selectedOrderType = v),
+                          ),
+                          const Divider(
+                              height: 0,
+                              thickness: 1,
+                              color: BauhausTheme.primaryBlack),
+                          _RadioRow(
+                            icon: Icons.delivery_dining,
+                            label: 'DELIVERY',
+                            sublabel: 'Delivered to your address',
+                            value: 'delivery',
+                            groupValue: selectedOrderType,
+                            onChanged: (v) =>
+                                setDialog(() => selectedOrderType = v),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: Text(
-                'CANCEL',
-                style: GoogleFonts.chivo(
-                  fontWeight: FontWeight.w700,
-                  color: BauhausTheme.mediumGrey,
+                    ),
+
+                    // ── DELIVERY ADDRESS (animated expand) ──────
+                    AnimatedCrossFade(
+                      duration: const Duration(milliseconds: 250),
+                      crossFadeState: isDelivery
+                          ? CrossFadeState.showSecond
+                          : CrossFadeState.showFirst,
+                      firstChild: const SizedBox.shrink(),
+                      secondChild: Padding(
+                        padding: const EdgeInsets.only(top: 14),
+                        child: _DeliveryAddressSection(
+                          addressCtrl: addressCtrl,
+                          landmarkCtrl: landmarkCtrl,
+                          cityCtrl: cityCtrl,
+                          pincodeCtrl: pincodeCtrl,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    // ── PAYMENT ─────────────────────────────────
+                    _label('PAYMENT METHOD'),
+                    const SizedBox(height: 6),
+                    Container(
+                      decoration: const BoxDecoration(
+                        border: Border.fromBorderSide(BorderSide(
+                            color: BauhausTheme.primaryBlack, width: 2)),
+                      ),
+                      child: Column(
+                        children: [
+                          _PaymentTile(
+                            icon: '💵',
+                            label: 'CASH ON DELIVERY',
+                            sublabel: isDelivery
+                                ? 'Not available for delivery'
+                                : 'Pay at the counter',
+                            value: 'cod',
+                            selected: selectedPayment == 'cod',
+                            disabled: isDelivery,
+                            onTap: isDelivery
+                                ? null
+                                : () =>
+                                    setDialog(() => selectedPayment = 'cod'),
+                          ),
+                          const Divider(
+                              height: 0,
+                              thickness: 1,
+                              color: BauhausTheme.primaryBlack),
+                          _PaymentTile(
+                            icon: '💳',
+                            label: 'ONLINE PAYMENT',
+                            sublabel: 'UPI / Card / Net Banking',
+                            value: 'online',
+                            selected: selectedPayment == 'online',
+                            disabled: false,
+                            onTap: () =>
+                                setDialog(() => selectedPayment = 'online'),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                  ],
                 ),
               ),
             ),
-            TextButton(
-              onPressed: () async {
-                // Validate fields
-                if (nameCtrl.text.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please enter your name')),
-                  );
-                  return;
-                }
-                if (phoneCtrl.text.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text('Please enter your phone number')),
-                  );
-                  return;
-                }
-                if (selectedOrderType == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please select order type')),
-                  );
-                  return;
-                }
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: Text('CANCEL',
+                    style: GoogleFonts.spaceGrotesk(
+                        fontWeight: FontWeight.w700,
+                        color: BauhausTheme.mediumGrey)),
+              ),
+              TextButton(
+                onPressed: _isSubmitting
+                    ? null
+                    : () async {
+                        // Validation
+                        final name = nameCtrl.text.trim();
+                        final phone = phoneCtrl.text.trim();
 
-                // Place order
-                setState(() => _isSubmitting = true);
-                try {
-                  final cart = this.context.read<CartProvider>();
-                  final order = this.context.read<OrderProvider>();
+                        if (name.isEmpty) {
+                          _snack(ctx, 'Please enter your name');
+                          return;
+                        }
+                        if (phone.length < 10) {
+                          _snack(ctx, 'Enter a valid 10-digit phone number');
+                          return;
+                        }
+                        if (selectedOrderType == null) {
+                          _snack(ctx, 'Please select an order type');
+                          return;
+                        }
 
-                  final orderId = await order.createOrder(
-                    customerName: nameCtrl.text,
-                    customerPhone: phoneCtrl.text,
-                    orderType: selectedOrderType!,
-                    paymentMethod: selectedPayment,
-                    items: cart.items.map((item) {
-                      return {
-                        'menu_item_id': item.item.id,
-                        'name': item.item.name,
-                        'quantity': item.quantity,
-                        'price': item.item.price,
-                      };
-                    }).toList(),
-                    totalPrice: totalAmount,
-                  );
+                        Map<String, String>? deliveryAddress;
+                        if (isDelivery) {
+                          if (addressCtrl.text.trim().isEmpty) {
+                            _snack(ctx, 'Please enter your delivery address');
+                            return;
+                          }
+                          if (cityCtrl.text.trim().isEmpty) {
+                            _snack(ctx, 'Please enter your city');
+                            return;
+                          }
+                          if (pincodeCtrl.text.trim().length < 6) {
+                            _snack(ctx, 'Please enter a valid 6-digit pincode');
+                            return;
+                          }
+                          deliveryAddress = {
+                            'address': addressCtrl.text.trim(),
+                            'landmark': landmarkCtrl.text.trim(),
+                            'city': cityCtrl.text.trim(),
+                            'pincode': pincodeCtrl.text.trim(),
+                          };
+                        }
 
-                  cart.clear();
-                  if (mounted) {
-                    Navigator.pop(dialogContext);
-                    this.context.go('/confirmation?orderId=$orderId');
-                  }
-                } catch (e) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(this.context).showSnackBar(
-                      SnackBar(content: Text('Error: $e')),
-                    );
-                  }
-                } finally {
-                  if (mounted) {
-                    setState(() => _isSubmitting = false);
-                  }
-                }
-              },
-              child: Text(
-                _isSubmitting ? 'PROCESSING...' : 'PLACE ORDER',
-                style: GoogleFonts.chivo(
-                  fontWeight: FontWeight.w700,
-                  color: BauhausTheme.accentRed,
+                        setState(() => _isSubmitting = true);
+                        try {
+                          final cart =
+                              this.context.read<CartProvider>();
+                          final orderProvider =
+                              this.context.read<OrderProvider>();
+
+                          final orderId =
+                              await orderProvider.createOrder(
+                            customerName: name,
+                            customerPhone: phone,
+                            orderType: selectedOrderType!,
+                            paymentMethod: selectedPayment,
+                            items: cart.items.map((item) => {
+                                  'menu_item_id': item.item.id,
+                                  'name': item.item.name,
+                                  'quantity': item.quantity,
+                                  'price': item.item.price,
+                                }).toList(),
+                            totalPrice: totalAmount,
+                            deliveryAddress: deliveryAddress,
+                          );
+
+                          cart.clear();
+                          if (mounted) {
+                            Navigator.pop(dialogContext);
+                            this
+                                .context
+                                .go('/confirmation?orderId=$orderId');
+                          }
+                        } catch (e) {
+                          if (mounted) {
+                            _snack(this.context, 'Error: $e');
+                          }
+                        } finally {
+                          if (mounted) {
+                            setState(() => _isSubmitting = false);
+                          }
+                        }
+                      },
+                child: Text(
+                  _isSubmitting ? 'PROCESSING...' : 'PLACE ORDER',
+                  style: GoogleFonts.spaceGrotesk(
+                      fontWeight: FontWeight.w800,
+                      color: BauhausTheme.accentRed),
                 ),
               ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _label(String text) => Text(
+        text,
+        style: GoogleFonts.spaceGrotesk(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: BauhausTheme.primaryBlack,
+          letterSpacing: 0.6,
+        ),
+      );
+
+  InputDecoration _inputDeco(String hint, {bool counter = false}) =>
+      InputDecoration(
+        hintText: hint,
+        hintStyle: GoogleFonts.spaceGrotesk(
+            fontSize: 13, color: BauhausTheme.mediumGrey),
+        border: const OutlineInputBorder(borderRadius: BorderRadius.zero),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        counterText: counter ? null : '',
+      );
+
+  void _snack(BuildContext ctx, String msg) {
+    ScaffoldMessenger.of(ctx)
+        .showSnackBar(SnackBar(content: Text(msg)));
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Delivery address section
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _DeliveryAddressSection extends StatelessWidget {
+  final TextEditingController addressCtrl, landmarkCtrl, cityCtrl, pincodeCtrl;
+
+  const _DeliveryAddressSection({
+    required this.addressCtrl,
+    required this.landmarkCtrl,
+    required this.cityCtrl,
+    required this.pincodeCtrl,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        border: Border.all(color: const Color(0xFF1565C0), width: 2),
+        color: const Color(0xFF1565C0).withValues(alpha: 0.04),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.location_on,
+                  color: Color(0xFF1565C0), size: 18),
+              const SizedBox(width: 6),
+              Text(
+                'DELIVERY ADDRESS',
+                style: GoogleFonts.spaceGrotesk(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF1565C0),
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: addressCtrl,
+            maxLines: 2,
+            decoration: _deco('Building / Street / Area *'),
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: landmarkCtrl,
+            decoration: _deco('Landmark (optional)'),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                flex: 3,
+                child: TextField(
+                  controller: cityCtrl,
+                  textCapitalization: TextCapitalization.words,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z ]')),
+                  ],
+                  decoration: _deco('City *'),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                flex: 2,
+                child: TextField(
+                  controller: pincodeCtrl,
+                  keyboardType: TextInputType.number,
+                  maxLength: 6,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  decoration: _deco('Pincode *', counter: true),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  InputDecoration _deco(String hint, {bool counter = false}) => InputDecoration(
+        hintText: hint,
+        hintStyle: GoogleFonts.spaceGrotesk(
+            fontSize: 12, color: Colors.grey.shade500),
+        border:
+            const OutlineInputBorder(borderRadius: BorderRadius.zero),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        counterText: counter ? null : '',
+        isDense: true,
+      );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Radio row for order type
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _RadioRow extends StatelessWidget {
+  final IconData icon;
+  final String label, sublabel, value;
+  final String? groupValue;
+  final ValueChanged<String?> onChanged;
+
+  const _RadioRow({
+    required this.icon,
+    required this.label,
+    required this.sublabel,
+    required this.value,
+    required this.groupValue,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final selected = groupValue == value;
+    return GestureDetector(
+      onTap: () => onChanged(value),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        color: selected ? BauhausTheme.primaryBlack : Colors.transparent,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: Row(
+          children: [
+            Icon(icon,
+                color: selected ? Colors.white : BauhausTheme.primaryBlack,
+                size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label,
+                      style: GoogleFonts.spaceGrotesk(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: selected
+                            ? Colors.white
+                            : BauhausTheme.primaryBlack,
+                      )),
+                  Text(sublabel,
+                      style: GoogleFonts.spaceGrotesk(
+                        fontSize: 11,
+                        color: selected ? Colors.white70 : Colors.grey,
+                      )),
+                ],
+              ),
             ),
+            if (selected)
+              const Icon(Icons.check_circle,
+                  color: Colors.white, size: 18),
           ],
         ),
       ),
@@ -477,13 +688,14 @@ class _OrderFormPageState extends State<OrderFormPage> {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Payment tile
+// ─────────────────────────────────────────────────────────────────────────────
+
 class _PaymentTile extends StatelessWidget {
-  final String icon;
-  final String label;
-  final String sublabel;
-  final String value;
-  final bool selected;
-  final VoidCallback onTap;
+  final String icon, label, sublabel, value;
+  final bool selected, disabled;
+  final VoidCallback? onTap;
 
   const _PaymentTile({
     required this.icon,
@@ -491,6 +703,7 @@ class _PaymentTile extends StatelessWidget {
     required this.sublabel,
     required this.value,
     required this.selected,
+    required this.disabled,
     required this.onTap,
   });
 
@@ -500,13 +713,18 @@ class _PaymentTile extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-        color: selected
-            ? BauhausTheme.primaryBlack
-            : BauhausTheme.white,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        color: disabled
+            ? Colors.grey.shade100
+            : selected
+                ? BauhausTheme.primaryBlack
+                : BauhausTheme.white,
         child: Row(
           children: [
-            Text(icon, style: const TextStyle(fontSize: 20)),
+            Text(icon,
+                style: TextStyle(
+                    fontSize: 20,
+                    color: disabled ? Colors.grey.shade400 : null)),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -514,24 +732,35 @@ class _PaymentTile extends StatelessWidget {
                 children: [
                   Text(
                     label,
-                    style: GoogleFonts.chivo(
+                    style: GoogleFonts.spaceGrotesk(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: selected ? BauhausTheme.white : BauhausTheme.primaryBlack,
+                      color: disabled
+                          ? Colors.grey.shade400
+                          : selected
+                              ? Colors.white
+                              : BauhausTheme.primaryBlack,
                     ),
                   ),
                   Text(
                     sublabel,
-                    style: GoogleFonts.chivo(
+                    style: GoogleFonts.spaceGrotesk(
                       fontSize: 11,
-                      color: selected ? Colors.white70 : BauhausTheme.mediumGrey,
+                      color: disabled
+                          ? Colors.grey.shade400
+                          : selected
+                              ? Colors.white70
+                              : BauhausTheme.mediumGrey,
                     ),
                   ),
                 ],
               ),
             ),
-            if (selected)
-              const Icon(Icons.check_circle, color: BauhausTheme.white, size: 18),
+            if (disabled)
+              const Icon(Icons.block, color: Colors.grey, size: 16)
+            else if (selected)
+              const Icon(Icons.check_circle,
+                  color: Colors.white, size: 18),
           ],
         ),
       ),

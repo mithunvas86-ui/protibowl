@@ -21,6 +21,7 @@ class OrderProvider extends ChangeNotifier {
     required String paymentMethod,
     required List<Map<String, dynamic>> items,
     required double totalPrice,
+    Map<String, String>? deliveryAddress,
   }) async {
     try {
       final customerId = _guestCustomerTracking.generateCustomerId();
@@ -57,9 +58,11 @@ class OrderProvider extends ChangeNotifier {
             'name': customerName,
             'phone': customerPhone,
             'order_type': orderType,
+            if (deliveryAddress != null) 'delivery_address': deliveryAddress,
           },
           'items': items,
           'created_at': createdAt,
+          if (deliveryAddress != null) 'delivery_address': deliveryAddress,
         };
         if (rpcNumber != null) insertData['order_number'] = rpcNumber;
 
@@ -106,10 +109,12 @@ class OrderProvider extends ChangeNotifier {
           'name': customerName,
           'phone': customerPhone,
           'order_type': orderType,
+          if (deliveryAddress != null) 'delivery_address': deliveryAddress,
         },
         'payment_method': paymentMethod,
         'status': 'pending',
         'created_at': createdAt,
+        if (deliveryAddress != null) 'delivery_address': deliveryAddress,
       };
 
       await _localStorage.saveOrder(
