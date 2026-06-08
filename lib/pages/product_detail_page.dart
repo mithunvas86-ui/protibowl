@@ -6,12 +6,12 @@ import '../providers/menu_provider.dart';
 import '../providers/cart_provider.dart';
 import '../providers/order_provider.dart';
 import '../theme/bauhaus_theme.dart';
-import '../widgets/bauhaus_button.dart';
 
 class ProductDetailPage extends StatefulWidget {
   final String itemId;
   final String tableId;
-  const ProductDetailPage({super.key, required this.itemId, required this.tableId});
+  const ProductDetailPage(
+      {super.key, required this.itemId, required this.tableId});
 
   @override
   State<ProductDetailPage> createState() => _ProductDetailPageState();
@@ -19,24 +19,26 @@ class ProductDetailPage extends StatefulWidget {
 
 class _ProductDetailPageState extends State<ProductDetailPage> {
   int _quantity = 1;
+  int _spiceLevel = 1; // 0=Mild, 1=Medium, 2=Hot
+  String _paymentMethod = 'cod';
   late TextEditingController _nameCtrl;
   late TextEditingController _phoneCtrl;
 
-  // Customization options
-  final Map<String, bool> _selectedCustomizations = {
+  static const Color _cobalt = Color(0xFF1B4FD8);
+  static const Color _vegGreen = Color(0xFF1B7A34);
+  static const Color _proteinOrange = Color(0xFFCC6200);
+
+  final Map<String, bool> _addons = {
     'Extra Avocado': false,
     'Quinoa Base': false,
     'Extra Protein': false,
   };
-
-  final Map<String, double> _customizationPrices = {
+  final Map<String, double> _addonPrices = {
     'Extra Avocado': 20,
     'Quinoa Base': 50,
     'Extra Protein': 30,
   };
-
-  // Standard includes
-  final List<String> _standardIncludes = [
+  final List<String> _includes = [
     'Mixed Greens',
     'Cherry Tomatoes',
     'Cucumber',
@@ -58,224 +60,178 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
     super.dispose();
   }
 
-  double _calculateCustomizationCost() {
-    return _selectedCustomizations.entries
-        .where((e) => e.value)
-        .fold(0, (sum, e) => sum + (_customizationPrices[e.key] ?? 0));
-  }
+  double get _addonTotal => _addons.entries
+      .where((e) => e.value)
+      .fold(0.0, (s, e) => s + (_addonPrices[e.key] ?? 0));
 
-  double _calculateTotalPrice(double basePrice) {
-    return (basePrice + _calculateCustomizationCost()) * _quantity;
-  }
+  double _total(double base) => (base + _addonTotal) * _quantity;
 
+  TextStyle _sg(double size, FontWeight weight, Color color,
+          {double? spacing}) =>
+      GoogleFonts.spaceGrotesk(
+          fontSize: size,
+          fontWeight: weight,
+          color: color,
+          letterSpacing: spacing);
 
-  void _showBuyNowDialog(BuildContext context, dynamic item) {
+  void _showOrderDialog(BuildContext context, dynamic item) {
     _nameCtrl.clear();
     _phoneCtrl.clear();
-    String? selectedOrderType;
+    String? orderType;
 
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: Text(
-            'CUSTOMER INFORMATION',
-            style: GoogleFonts.chivo(fontSize: 18, fontWeight: FontWeight.w800),
+      builder: (dCtx) => StatefulBuilder(
+        builder: (ctx, setS) => AlertDialog(
+          shape:
+              const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+          titlePadding: EdgeInsets.zero,
+          title: Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            color: BauhausTheme.primaryBlack,
+            child: Text('CUSTOMER DETAILS',
+                style: _sg(15, FontWeight.w800, BauhausTheme.white,
+                    spacing: 1)),
           ),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'NAME',
-                  style: GoogleFonts.chivo(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: BauhausTheme.primaryBlack,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 8),
+                _label('NAME'),
+                const SizedBox(height: 6),
                 TextField(
                   controller: _nameCtrl,
-                  decoration: InputDecoration(
-                    labelText: 'Enter your name',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.zero),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                  ),
+                  style: _sg(14, FontWeight.w500, BauhausTheme.primaryBlack),
+                  decoration:
+                      const InputDecoration(hintText: 'Your full name'),
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  'PHONE NUMBER',
-                  style: GoogleFonts.chivo(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: BauhausTheme.primaryBlack,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 14),
+                _label('PHONE'),
+                const SizedBox(height: 6),
                 TextField(
                   controller: _phoneCtrl,
-                  decoration: InputDecoration(
-                    labelText: 'Enter your phone number',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.zero),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                  ),
+                  keyboardType: TextInputType.phone,
+                  style: _sg(14, FontWeight.w500, BauhausTheme.primaryBlack),
+                  decoration:
+                      const InputDecoration(hintText: '10-digit number'),
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  'ORDER TYPE',
-                  style: GoogleFonts.chivo(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: BauhausTheme.primaryBlack,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 14),
+                _label('ORDER TYPE'),
+                const SizedBox(height: 6),
                 Container(
                   decoration: BoxDecoration(
-                    border: Border.all(color: BauhausTheme.primaryBlack, width: 2),
+                    border: Border.all(
+                        color: BauhausTheme.primaryBlack, width: 2),
                   ),
-                  child: Column(
-                    children: [
-                      RadioListTile<String>(
-                        title: const Text('DINE-IN'),
-                        value: 'dine_in',
-                        groupValue: selectedOrderType,
-                        onChanged: (value) => setState(() => selectedOrderType = value),
-                      ),
-                      const Divider(height: 0, thickness: 1, color: BauhausTheme.primaryBlack),
-                      RadioListTile<String>(
-                        title: const Text('TAKEAWAY'),
-                        value: 'takeaway',
-                        groupValue: selectedOrderType,
-                        onChanged: (value) => setState(() => selectedOrderType = value),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: BauhausTheme.accentRed, width: 2),
-                    color: BauhausTheme.accentRed.withValues(alpha: 0.1),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'PAYMENT',
-                        style: GoogleFonts.chivo(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: BauhausTheme.primaryBlack,
-                        ),
-                      ),
-                      Text(
-                        '💵 CASH ON DELIVERY',
-                        style: GoogleFonts.chivo(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: BauhausTheme.accentRed,
-                        ),
-                      ),
-                    ],
-                  ),
+                  child: Column(children: [
+                    RadioListTile<String>(
+                      title: Text('DINE-IN',
+                          style: _sg(13, FontWeight.w700,
+                              BauhausTheme.primaryBlack)),
+                      value: 'dine_in',
+                      groupValue: orderType,
+                      activeColor: _cobalt,
+                      dense: true,
+                      onChanged: (v) => setS(() => orderType = v),
+                    ),
+                    const Divider(
+                        height: 0,
+                        thickness: 1,
+                        color: BauhausTheme.primaryBlack),
+                    RadioListTile<String>(
+                      title: Text('TAKEAWAY',
+                          style: _sg(13, FontWeight.w700,
+                              BauhausTheme.primaryBlack)),
+                      value: 'takeaway',
+                      groupValue: orderType,
+                      activeColor: _cobalt,
+                      dense: true,
+                      onChanged: (v) => setS(() => orderType = v),
+                    ),
+                  ]),
                 ),
               ],
             ),
           ),
+          actionsPadding:
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: Text(
-                'CANCEL',
-                style: GoogleFonts.chivo(
-                  fontWeight: FontWeight.w700,
-                  color: BauhausTheme.mediumGrey,
-                ),
-              ),
+              onPressed: () => Navigator.pop(dCtx),
+              child: Text('CANCEL',
+                  style: _sg(
+                      13, FontWeight.w700, BauhausTheme.mediumGrey)),
             ),
-            TextButton(
-              onPressed: () async {
+            GestureDetector(
+              onTap: () async {
                 if (_nameCtrl.text.isEmpty) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(this.context).showSnackBar(
-                      const SnackBar(content: Text('Please enter your name')),
-                    );
-                  }
+                  ScaffoldMessenger.of(this.context).showSnackBar(
+                      const SnackBar(
+                          content: Text('Please enter your name')));
                   return;
                 }
                 if (_phoneCtrl.text.isEmpty) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(this.context).showSnackBar(
-                      const SnackBar(content: Text('Please enter your phone number')),
-                    );
-                  }
+                  ScaffoldMessenger.of(this.context).showSnackBar(
+                      const SnackBar(
+                          content: Text('Please enter phone number')));
                   return;
                 }
-                if (selectedOrderType == null) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(this.context).showSnackBar(
-                      const SnackBar(content: Text('Please select order type')),
-                    );
-                  }
+                if (orderType == null) {
+                  ScaffoldMessenger.of(this.context).showSnackBar(
+                      const SnackBar(
+                          content: Text('Please select order type')));
                   return;
                 }
-                final name = _nameCtrl.text;
-                final phone = _phoneCtrl.text;
-                final orderType = selectedOrderType!;
-                const paymentMethod = 'cod';
-
                 try {
-                  final customizationCost = _calculateCustomizationCost();
-                  final itemTotalPrice = (item.price + customizationCost) * _quantity;
-
-                  final orderId = await this.context.read<OrderProvider>().createOrder(
-                        customerName: name,
-                        customerPhone: phone,
-                        orderType: orderType,
-                        paymentMethod: paymentMethod,
-                        items: [
-                          {
-                            'menu_item_id': item.id,
-                            'name': item.name,
-                            'quantity': _quantity,
-                            'price': item.price + customizationCost,
-                            'customizations': _selectedCustomizations.entries
-                                .where((e) => e.value)
-                                .map((e) => '${e.key} (+₹${_customizationPrices[e.key]})')
-                                .toList()
-                                .join(', '),
-                          }
-                        ],
-                        totalPrice: itemTotalPrice,
-                      );
-
+                  final spiceLabels = ['MILD', 'MEDIUM', 'HOT'];
+                  final customStr = [
+                    'Spice: ${spiceLabels[_spiceLevel]}',
+                    ..._addons.entries
+                        .where((e) => e.value)
+                        .map((e) =>
+                            '${e.key} (+₹${_addonPrices[e.key]?.toStringAsFixed(0)})'),
+                  ].join(', ');
+                  final totalPrice = _total(item.price);
+                  final orderId =
+                      await this.context.read<OrderProvider>().createOrder(
+                    customerName: _nameCtrl.text,
+                    customerPhone: _phoneCtrl.text,
+                    orderType: orderType!,
+                    paymentMethod: _paymentMethod,
+                    items: [
+                      {
+                        'menu_item_id': item.id,
+                        'name': item.name,
+                        'quantity': _quantity,
+                        'price': item.price + _addonTotal,
+                        'customizations': customStr,
+                      }
+                    ],
+                    totalPrice: totalPrice,
+                  );
                   if (mounted) {
-                    if (dialogContext.mounted) {
-                      Navigator.pop(dialogContext);
-                    }
-
+                    if (dCtx.mounted) Navigator.pop(dCtx);
                     this.context.go('/confirmation?orderId=$orderId');
                   }
                 } catch (e) {
                   if (mounted) {
-                    ScaffoldMessenger.of(this.context).showSnackBar(
-                      SnackBar(
+                    ScaffoldMessenger.of(this.context).showSnackBar(SnackBar(
                         content: Text('Error: $e'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
+                        backgroundColor: Colors.red));
                   }
                 }
               },
-              child: const Text('PLACE ORDER'),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 20, vertical: 10),
+                color: BauhausTheme.accentRed,
+                child: Text('PLACE ORDER',
+                    style: _sg(13, FontWeight.w800, BauhausTheme.white,
+                        spacing: 0.8)),
+              ),
             ),
           ],
         ),
@@ -286,526 +242,728 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: BauhausTheme.white,
       appBar: AppBar(
-        title: const Text(''),
         backgroundColor: BauhausTheme.white,
         elevation: 0,
-        automaticallyImplyLeading: true,
+        iconTheme:
+            const IconThemeData(color: BauhausTheme.primaryBlack),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(2),
+          child: Container(
+              height: 2, color: BauhausTheme.primaryBlack),
+        ),
+        actions: [
+          Consumer<CartProvider>(builder: (context, cart, _) {
+            final count =
+                cart.items.fold(0, (s, i) => s + i.quantity);
+            if (count == 0) return const SizedBox.shrink();
+            return GestureDetector(
+              onTap: () => context.go('/order'),
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    const Icon(Icons.shopping_cart_outlined,
+                        color: BauhausTheme.primaryBlack,
+                        size: 26),
+                    Positioned(
+                      top: 0,
+                      right: 0,
+                      child: Container(
+                        width: 14,
+                        height: 14,
+                        color: BauhausTheme.accentRed,
+                        alignment: Alignment.center,
+                        child: Text('$count',
+                            style: _sg(8, FontWeight.w800,
+                                BauhausTheme.white)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
+        ],
       ),
       body: Consumer<MenuProvider>(
         builder: (context, menuProvider, _) {
-          final itemIndex = menuProvider.items.indexWhere(
-            (i) => i.id == widget.itemId,
-          );
-
-          if (itemIndex == -1) {
-            return const Center(child: Text('Product not found'));
+          final idx = menuProvider.items
+              .indexWhere((i) => i.id == widget.itemId);
+          if (idx == -1) {
+            return Center(
+                child: Text('Product not found',
+                    style: _sg(16, FontWeight.w500,
+                        BauhausTheme.mediumGrey)));
           }
-
-          final item = menuProvider.items[itemIndex];
+          final item = menuProvider.items[idx];
 
           return SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Category Header with left border
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: const BoxDecoration(
-                    border: Border(
-                      left: BorderSide(
-                        color: BauhausTheme.accentRed,
-                        width: 8,
-                      ),
-                    ),
-                  ),
-                  child: Text(
-                    item.category.toUpperCase(),
-                    style: GoogleFonts.chivo(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: BauhausTheme.primaryBlack,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                ),
-                const Divider(
-                  color: BauhausTheme.primaryBlack,
-                  thickness: 2,
-                  height: 0,
-                ),
-                // Product Image
-                Container(
-                  height: 280,
-                  color: BauhausTheme.patternGrey,
+                // ── HERO IMAGE ──────────────────────────────
+                SizedBox(
+                  height: 300,
                   child: Stack(
+                    fit: StackFit.expand,
                     children: [
                       item.imageUrl != null
-                          ? Image.network(
-                              item.imageUrl!,
+                          ? Image.network(item.imageUrl!,
                               fit: BoxFit.cover,
-                              width: double.infinity,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  const Icon(Icons.image, size: 80),
-                            )
-                          : const Icon(Icons.image, size: 80),
-                      // VEG badge
+                              errorBuilder: (_, __, ___) =>
+                                  _imagePlaceholder())
+                          : _imagePlaceholder(),
+                      // bottom gradient
                       Positioned(
-                        top: 12,
-                        right: 12,
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          color: BauhausTheme.accentRed,
-                          child: Text(
-                            'VEG',
-                            style: GoogleFonts.chivo(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: BauhausTheme.white,
+                          height: 100,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.bottomCenter,
+                              end: Alignment.topCenter,
+                              colors: [
+                                Colors.black.withOpacity(0.6),
+                                Colors.transparent
+                              ],
                             ),
                           ),
+                        ),
+                      ),
+                      // Veg indicator — top left
+                      Positioned(
+                        top: 14,
+                        left: 14,
+                        child: Container(
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                                color: _vegGreen, width: 2),
+                          ),
+                          alignment: Alignment.center,
+                          child: Container(
+                            width: 11,
+                            height: 11,
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: _vegGreen,
+                            ),
+                          ),
+                        ),
+                      ),
+                      // PLANT BASED badge — top right
+                      Positioned(
+                        top: 14,
+                        right: 14,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 6),
+                          color: BauhausTheme.accentRed,
+                          child: Text('PLANT BASED',
+                              style: _sg(11, FontWeight.w800,
+                                  BauhausTheme.white,
+                                  spacing: 0.8)),
+                        ),
+                      ),
+                      // Category label — bottom left
+                      Positioned(
+                        bottom: 14,
+                        left: 0,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
+                          color: BauhausTheme.primaryBlack,
+                          child: Text(
+                              item.category.toUpperCase(),
+                              style: _sg(11, FontWeight.w700,
+                                  BauhausTheme.white,
+                                  spacing: 1.2)),
                         ),
                       ),
                     ],
                   ),
                 ),
-                // Product Details
+                Container(height: 2, color: BauhausTheme.primaryBlack),
+
+                // ── TITLE + PRICE ────────────────────────────
                 Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                  child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Product Title
-                      Text(
-                        item.name.toUpperCase(),
-                        style: GoogleFonts.chivo(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                          color: BauhausTheme.primaryBlack,
-                          letterSpacing: 0.5,
+                      Expanded(
+                        child: Text(
+                          item.name.toUpperCase(),
+                          style: _sg(22, FontWeight.w800,
+                              BauhausTheme.primaryBlack,
+                              spacing: 0.4),
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      // Description
-                      if (item.description.isNotEmpty) ...[
-                        Text(
-                          item.description,
-                          style: GoogleFonts.chivo(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.grey[700],
-                            height: 1.6,
-                          ),
+                      const SizedBox(width: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 10),
+                        color: _cobalt,
+                        child: Text(
+                          '₹${item.price.toStringAsFixed(0)}',
+                          style: _sg(22, FontWeight.w800,
+                              BauhausTheme.white),
                         ),
-                        const SizedBox(height: 8),
-                      ],
-                      // Price and Cart Button
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            color: Colors.amber[300],
-                            child: Text(
-                              '₹${item.price.toStringAsFixed(0)}',
-                              style: GoogleFonts.chivo(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w800,
-                                color: BauhausTheme.primaryBlack,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                // ── DIETARY TAGS ─────────────────────────────
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16),
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _solidTag('VEGAN', _vegGreen),
+                      _solidTag('GLUTEN FREE', _cobalt),
+                      _solidTag('HIGH PROTEIN', _proteinOrange),
+                      if (item.kcal > 0)
+                        _solidTag('${item.kcal} KCAL',
+                            BauhausTheme.surfaceBlack),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                // ── DESCRIPTION ──────────────────────────────
+                if (item.description.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16),
+                    child: Text(
+                      item.description,
+                      style: _sg(13, FontWeight.w400,
+                              BauhausTheme.mediumGrey)
+                          .copyWith(height: 1.65),
+                    ),
+                  ),
+                const SizedBox(height: 20),
+                Container(height: 2, color: BauhausTheme.primaryBlack),
+
+                // ── NUTRITION GRID ───────────────────────────
+                _sectionHeader('NUTRITION / SERVING'),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                  child: Row(children: [
+                    _nutCell('CALORIES', '280'),
+                    _nutCell('PROTEIN', '12.5g'),
+                    _nutCell('CARBS', '32g'),
+                    _nutCell('FAT', '8g'),
+                  ]),
+                ),
+                Container(height: 2, color: BauhausTheme.primaryBlack),
+
+                // ── SPICE LEVEL ──────────────────────────────
+                _sectionHeader('SPICE LEVEL'),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                  child: Container(
+                    height: 48,
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                          color: BauhausTheme.primaryBlack,
+                          width: 2),
+                    ),
+                    child: Row(
+                      children: List.generate(3, (i) {
+                        final labels = ['MILD', 'MEDIUM', 'HOT'];
+                        final sel = _spiceLevel == i;
+                        return Expanded(
+                          child: GestureDetector(
+                            onTap: () =>
+                                setState(() => _spiceLevel = i),
+                            child: AnimatedContainer(
+                              duration:
+                                  const Duration(milliseconds: 180),
+                              decoration: BoxDecoration(
+                                color: sel
+                                    ? BauhausTheme.accentRed
+                                    : BauhausTheme.white,
+                                border: i < 2
+                                    ? const Border(
+                                        right: BorderSide(
+                                            color: BauhausTheme
+                                                .primaryBlack,
+                                            width: 1))
+                                    : null,
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                labels[i],
+                                style: _sg(
+                                    12,
+                                    FontWeight.w800,
+                                    sel
+                                        ? BauhausTheme.white
+                                        : BauhausTheme.primaryBlack,
+                                    spacing: 0.5),
                               ),
                             ),
                           ),
-                          Consumer<CartProvider>(
-                            builder: (context, cartProvider, _) {
-                              final cartItems = cartProvider.items;
-                              final idx = cartItems.indexWhere((ci) => ci.item.id == item.id);
-                              final count = idx > -1 ? cartItems[idx].quantity : 0;
+                        );
+                      }),
+                    ),
+                  ),
+                ),
+                Container(height: 2, color: BauhausTheme.primaryBlack),
 
-                              if (count == 0) {
-                                return GestureDetector(
-                                  onTap: () => cartProvider.addItem(item),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                                    color: BauhausTheme.primaryBlack,
-                                    child: Text(
-                                      'ADD TO CART',
-                                      style: GoogleFonts.chivo(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w800,
-                                        color: BauhausTheme.white,
-                                        letterSpacing: 0.5,
-                                      ),
-                                    ),
+                // ── STANDARD INCLUDES ────────────────────────
+                _sectionHeader('STANDARD INCLUDES'),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                          color: BauhausTheme.primaryBlack,
+                          width: 1),
+                    ),
+                    child: Column(
+                      children: _includes
+                          .asMap()
+                          .entries
+                          .map((entry) {
+                        final last =
+                            entry.key == _includes.length - 1;
+                        return Column(children: [
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 10),
+                            child: Row(children: [
+                              Container(
+                                width: 18,
+                                height: 18,
+                                color: _vegGreen,
+                                child: const Icon(Icons.check,
+                                    size: 12,
+                                    color: Colors.white),
+                              ),
+                              const SizedBox(width: 10),
+                              Text(entry.value,
+                                  style: _sg(
+                                      13,
+                                      FontWeight.w500,
+                                      BauhausTheme
+                                          .primaryBlack)),
+                            ]),
+                          ),
+                          if (!last)
+                            Container(
+                                height: 1,
+                                color: BauhausTheme.patternGrey),
+                        ]);
+                      }).toList(),
+                    ),
+                  ),
+                ),
+                Container(height: 2, color: BauhausTheme.primaryBlack),
+
+                // ── ADD-ONS ──────────────────────────────────
+                _sectionHeader('ADD-ONS (OPTIONAL)'),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                          color: BauhausTheme.primaryBlack,
+                          width: 2),
+                    ),
+                    child: Column(
+                      children: _addons.keys
+                          .toList()
+                          .asMap()
+                          .entries
+                          .map((entry) {
+                        final key = entry.value;
+                        final last =
+                            entry.key == _addons.length - 1;
+                        final sel = _addons[key]!;
+                        return Column(children: [
+                          GestureDetector(
+                            onTap: () => setState(
+                                () => _addons[key] = !sel),
+                            child: AnimatedContainer(
+                              duration:
+                                  const Duration(milliseconds: 180),
+                              color: sel
+                                  ? _cobalt.withOpacity(0.06)
+                                  : BauhausTheme.white,
+                              padding:
+                                  const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 12),
+                              child: Row(children: [
+                                // Custom checkbox
+                                AnimatedContainer(
+                                  duration: const Duration(
+                                      milliseconds: 180),
+                                  width: 22,
+                                  height: 22,
+                                  decoration: BoxDecoration(
+                                    border: Border.all(
+                                        color: sel
+                                            ? _cobalt
+                                            : BauhausTheme
+                                                .primaryBlack,
+                                        width: 2),
+                                    color: sel
+                                        ? _cobalt
+                                        : BauhausTheme.white,
                                   ),
-                                );
-                              }
+                                  child: sel
+                                      ? const Icon(Icons.check,
+                                          size: 14,
+                                          color: Colors.white)
+                                      : null,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                      key.toUpperCase(),
+                                      style: _sg(
+                                          13,
+                                          FontWeight.w700,
+                                          BauhausTheme
+                                              .primaryBlack,
+                                          spacing: 0.3)),
+                                ),
+                                Container(
+                                  padding:
+                                      const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4),
+                                  color: _cobalt,
+                                  child: Text(
+                                      '+₹${_addonPrices[key]?.toStringAsFixed(0)}',
+                                      style: _sg(
+                                          12,
+                                          FontWeight.w800,
+                                          BauhausTheme.white)),
+                                ),
+                              ]),
+                            ),
+                          ),
+                          if (!last)
+                            Container(
+                                height: 1,
+                                color: BauhausTheme.primaryBlack),
+                        ]);
+                      }).toList(),
+                    ),
+                  ),
+                ),
+                Container(height: 2, color: BauhausTheme.primaryBlack),
 
-                              return Container(
-                                decoration: BoxDecoration(
-                                  border: Border.all(color: BauhausTheme.primaryBlack, width: 2),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    GestureDetector(
-                                      onTap: () {
-                                        if (count > 1) {
-                                          cartProvider.updateQuantity(item.id, count - 1);
-                                        } else {
-                                          cartProvider.removeItem(item.id);
-                                        }
-                                      },
-                                      child: Container(
-                                        width: 40,
-                                        height: 40,
-                                        alignment: Alignment.center,
-                                        color: BauhausTheme.primaryBlack,
-                                        child: const Icon(Icons.remove, color: BauhausTheme.white, size: 18),
-                                      ),
-                                    ),
-                                    Container(
-                                      width: 50,
-                                      height: 40,
-                                      alignment: Alignment.center,
-                                      decoration: const BoxDecoration(
-                                        border: Border(
-                                          left: BorderSide(color: BauhausTheme.primaryBlack, width: 1),
-                                          right: BorderSide(color: BauhausTheme.primaryBlack, width: 1),
-                                        ),
-                                      ),
-                                      child: Text(
-                                        '$count',
-                                        style: GoogleFonts.chivo(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w700,
-                                          color: BauhausTheme.primaryBlack,
-                                        ),
-                                      ),
-                                    ),
-                                    GestureDetector(
-                                      onTap: () => cartProvider.addItem(item),
-                                      child: Container(
-                                        width: 40,
-                                        height: 40,
-                                        alignment: Alignment.center,
-                                        color: BauhausTheme.primaryBlack,
-                                        child: const Icon(Icons.add, color: BauhausTheme.white, size: 18),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
+                // ── QUANTITY ─────────────────────────────────
+                _sectionHeader('QUANTITY'),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          if (_quantity > 1)
+                            setState(() => _quantity--);
+                        },
+                        child: Container(
+                          width: 48,
+                          height: 48,
+                          color: BauhausTheme.primaryBlack,
+                          alignment: Alignment.center,
+                          child: const Icon(Icons.remove,
+                              color: BauhausTheme.white,
+                              size: 20),
+                        ),
+                      ),
+                      Container(
+                        width: 64,
+                        height: 48,
+                        decoration: const BoxDecoration(
+                          border: Border(
+                            top: BorderSide(
+                                color: BauhausTheme.primaryBlack,
+                                width: 2),
+                            bottom: BorderSide(
+                                color: BauhausTheme.primaryBlack,
+                                width: 2),
+                          ),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text('$_quantity',
+                            style: _sg(22, FontWeight.w800,
+                                BauhausTheme.primaryBlack)),
+                      ),
+                      GestureDetector(
+                        onTap: () => setState(() => _quantity++),
+                        child: Container(
+                          width: 48,
+                          height: 48,
+                          color: BauhausTheme.primaryBlack,
+                          alignment: Alignment.center,
+                          child: const Icon(Icons.add,
+                              color: BauhausTheme.white,
+                              size: 20),
+                        ),
+                      ),
+                      const Spacer(),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text('TOTAL',
+                              style: _sg(10, FontWeight.w700,
+                                  BauhausTheme.mediumGrey,
+                                  spacing: 0.5)),
+                          Text(
+                            '₹${_total(item.price).toStringAsFixed(0)}',
+                            style: _sg(
+                                24, FontWeight.w800, _cobalt),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 24),
-                      // Nutrition Badges
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: BauhausTheme.accentRed, width: 2),
-                              color: BauhausTheme.accentRed.withOpacity(0.1),
-                            ),
-                            child: Text(
-                              'PLANT BASED',
-                              style: GoogleFonts.chivo(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                color: BauhausTheme.accentRed,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
+                    ],
+                  ),
+                ),
+                Container(height: 2, color: BauhausTheme.primaryBlack),
+
+                // ── PAYMENT METHOD ───────────────────────────
+                _sectionHeader('PAYMENT METHOD'),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                  child: Container(
+                    height: 56,
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                          color: BauhausTheme.primaryBlack,
+                          width: 2),
+                    ),
+                    child: Row(children: [
+                      _payToggle('PAY ONLINE', 'online',
+                          Icons.credit_card_outlined),
+                      Container(
+                          width: 2,
+                          height: 56,
+                          color: BauhausTheme.primaryBlack),
+                      _payToggle('CASH ON DELIVERY', 'cod',
+                          Icons.payments_outlined),
+                    ]),
+                  ),
+                ),
+
+                // ── ADD TO CART ──────────────────────────────
+                Padding(
+                  padding:
+                      const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                  child: Consumer<CartProvider>(
+                    builder: (context, cart, _) {
+                      final inCart = cart.items
+                              .indexWhere(
+                                  (i) => i.item.id == item.id) >
+                          -1;
+                      return GestureDetector(
+                        onTap: () => inCart
+                            ? context.go('/order')
+                            : cart.addItem(item),
+                        child: Container(
+                          height: 52,
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                                color: BauhausTheme.primaryBlack,
+                                width: 2),
+                            color: inCart
+                                ? BauhausTheme.lightGrey
+                                : BauhausTheme.white,
                           ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.green, width: 2),
-                              color: Colors.green.withOpacity(0.1),
-                            ),
-                            child: Text(
-                              'HIGH PROTEIN',
-                              style: GoogleFonts.chivo(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.green,
-                                letterSpacing: 0.5,
+                          alignment: Alignment.center,
+                          child: Row(
+                            mainAxisAlignment:
+                                MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                inCart
+                                    ? Icons.shopping_cart
+                                    : Icons.add_shopping_cart,
+                                size: 18,
+                                color: BauhausTheme.primaryBlack,
                               ),
+                              const SizedBox(width: 8),
+                              Text(
+                                inCart
+                                    ? 'VIEW CART'
+                                    : 'ADD TO CART',
+                                style: _sg(
+                                    14,
+                                    FontWeight.w800,
+                                    BauhausTheme.primaryBlack,
+                                    spacing: 0.8),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+
+                // ── PLACE ORDER ──────────────────────────────
+                Padding(
+                  padding:
+                      const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                  child: GestureDetector(
+                    onTap: () => _showOrderDialog(context, item),
+                    child: Container(
+                      height: 58,
+                      color: BauhausTheme.accentRed,
+                      alignment: Alignment.center,
+                      child: Row(
+                        mainAxisAlignment:
+                            MainAxisAlignment.center,
+                        children: [
+                          Text('PLACE ORDER',
+                              style: _sg(
+                                  16,
+                                  FontWeight.w800,
+                                  BauhausTheme.white,
+                                  spacing: 1.2)),
+                          const SizedBox(width: 14),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 5),
+                            color: Colors.black26,
+                            child: Text(
+                              '₹${_total(item.price).toStringAsFixed(0)}',
+                              style: _sg(14, FontWeight.w800,
+                                  BauhausTheme.white),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 20),
-                      // Nutrition Info Grid
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: BauhausTheme.primaryBlack, width: 1),
-                          color: BauhausTheme.lightGrey,
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'NUTRITION (per serving)',
-                              style: GoogleFonts.chivo(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                                color: BauhausTheme.primaryBlack,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            GridView.count(
-                              crossAxisCount: 2,
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              mainAxisSpacing: 8,
-                              crossAxisSpacing: 8,
-                              childAspectRatio: 2.5,
-                              children: const [
-                                _NutritionCell('CALORIES', '280'),
-                                _NutritionCell('PROTEIN', '12.5g'),
-                                _NutritionCell('CARBS', '32g'),
-                                _NutritionCell('FAT', '8g'),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      // Standard Includes Section
-                      Text(
-                        'STANDARD INCLUDES',
-                        style: GoogleFonts.chivo(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: BauhausTheme.primaryBlack,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: BauhausTheme.primaryBlack, width: 1),
-                          color: BauhausTheme.lightGrey,
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: _standardIncludes.map((item) {
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 4),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.check, size: 16, color: Colors.green),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    item,
-                                    style: GoogleFonts.chivo(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                      color: BauhausTheme.primaryBlack,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      // Add-ons/Customization Section
-                      Text(
-                        'ADD-ONS (Optional)',
-                        style: GoogleFonts.chivo(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: BauhausTheme.primaryBlack,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(color: BauhausTheme.primaryBlack, width: 1),
-                        ),
-                        child: Column(
-                          children: _selectedCustomizations.keys.map((customization) {
-                            final isLast = _selectedCustomizations.keys.last == customization;
-                            return Column(
-                              children: [
-                                CheckboxListTile(
-                                  title: Text(
-                                    customization.toUpperCase(),
-                                    style: GoogleFonts.chivo(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w700,
-                                      color: BauhausTheme.primaryBlack,
-                                    ),
-                                  ),
-                                  subtitle: Text(
-                                    '+₹${_customizationPrices[customization]?.toStringAsFixed(0)}',
-                                    style: GoogleFonts.chivo(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w700,
-                                      color: BauhausTheme.accentRed,
-                                    ),
-                                  ),
-                                  value: _selectedCustomizations[customization]!,
-                                  onChanged: (value) {
-                                    setState(() {
-                                      _selectedCustomizations[customization] = value ?? false;
-                                    });
-                                  },
-                                  controlAffinity: ListTileControlAffinity.leading,
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                                  dense: true,
-                                  activeColor: BauhausTheme.accentRed,
-                                ),
-                                if (!isLast)
-                                  const Divider(
-                                    color: BauhausTheme.primaryBlack,
-                                    thickness: 1,
-                                    height: 0,
-                                  ),
-                              ],
-                            );
-                          }).toList(),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      BauhausButton(
-                        label: 'BUY NOW',
-                        onPressed: () => _showBuyNowDialog(context, item),
-                        height: 44,
-                      ),
-                      const SizedBox(height: 20),
-                      // Recommended Products
-                      Text(
-                        'RECOMMENDED',
-                        style: GoogleFonts.chivo(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: BauhausTheme.primaryBlack,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        height: 140,
-                        child: Consumer<MenuProvider>(
-                          builder: (context, menuProvider, _) {
-                            final recommended = menuProvider.items
-                                .where((i) => i.category == item.category && i.id != item.id)
-                                .take(3)
-                                .toList();
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(height: 2, color: BauhausTheme.primaryBlack),
 
-                            if (recommended.isEmpty) {
-                              return Container(
-                                padding: const EdgeInsets.all(16),
+                // ── RECOMMENDED ──────────────────────────────
+                _sectionHeader('YOU MAY ALSO LIKE'),
+                SizedBox(
+                  height: 158,
+                  child: Consumer<MenuProvider>(
+                    builder: (_, mp, __) {
+                      final recs = mp.items
+                          .where((i) =>
+                              i.category == item.category &&
+                              i.id != item.id)
+                          .take(5)
+                          .toList();
+                      if (recs.isEmpty) {
+                        return Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Text(
+                              'No recommendations available',
+                              style: _sg(12, FontWeight.w500,
+                                  BauhausTheme.mediumGrey)),
+                        );
+                      }
+                      return ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.fromLTRB(
+                            16, 0, 16, 16),
+                        itemCount: recs.length,
+                        itemBuilder: (ctx, i) {
+                          final rec = recs[i];
+                          return Padding(
+                            padding:
+                                const EdgeInsets.only(right: 10),
+                            child: GestureDetector(
+                              onTap: () => context
+                                  .push('/product/${rec.id}'),
+                              child: Container(
+                                width: 115,
                                 decoration: BoxDecoration(
                                   border: Border.all(
-                                    color: BauhausTheme.primaryBlack,
-                                    width: 1,
-                                  ),
+                                      color: BauhausTheme
+                                          .primaryBlack,
+                                      width: 1),
                                 ),
-                                child: Center(
-                                  child: Text(
-                                    'No recommendations available',
-                                    style: GoogleFonts.chivo(
-                                      fontSize: 12,
-                                      color: BauhausTheme.mediumGrey,
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    Expanded(
+                                      child: rec.imageUrl != null
+                                          ? Image.network(
+                                              rec.imageUrl!,
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (_,
+                                                      __,
+                                                      ___) =>
+                                                  _imagePlaceholder())
+                                          : _imagePlaceholder(),
                                     ),
-                                  ),
-                                ),
-                              );
-                            }
-
-                            return ListView.builder(
-                              scrollDirection: Axis.horizontal,
-                              itemCount: recommended.length,
-                              itemBuilder: (context, index) {
-                                final rec = recommended[index];
-                                return Padding(
-                                  padding: const EdgeInsets.only(right: 12),
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      Navigator.pop(context);
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => ProductDetailPage(
-                                            itemId: rec.id,
-                                            tableId: widget.tableId,
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                    child: Container(
-                                      width: 120,
-                                      decoration: BoxDecoration(
-                                        border: Border.all(
-                                          color: BauhausTheme.primaryBlack,
-                                          width: 1,
-                                        ),
-                                        color: BauhausTheme.white,
-                                      ),
+                                    Padding(
+                                      padding:
+                                          const EdgeInsets.all(8),
                                       child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment
+                                                .start,
                                         children: [
-                                          Expanded(
-                                            child: Container(
-                                              color: BauhausTheme.patternGrey,
-                                              child: rec.imageUrl != null
-                                                  ? Image.network(
-                                                      rec.imageUrl!,
-                                                      fit: BoxFit.cover,
-                                                      width: double.infinity,
-                                                    )
-                                                  : const Icon(Icons.image, size: 40),
-                                            ),
+                                          Text(
+                                            rec.name,
+                                            maxLines: 1,
+                                            overflow: TextOverflow
+                                                .ellipsis,
+                                            style: _sg(
+                                                10,
+                                                FontWeight.w700,
+                                                BauhausTheme
+                                                    .primaryBlack),
                                           ),
-                                          Padding(
-                                            padding: const EdgeInsets.all(8),
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  rec.name,
-                                                  maxLines: 2,
-                                                  overflow: TextOverflow.ellipsis,
-                                                  style: GoogleFonts.chivo(
-                                                    fontSize: 10,
-                                                    fontWeight: FontWeight.w700,
-                                                  ),
-                                                ),
-                                                Text(
-                                                  '₹${rec.price.toStringAsFixed(0)}',
-                                                  style: GoogleFonts.chivo(
-                                                    fontSize: 9,
-                                                    fontWeight: FontWeight.w700,
-                                                    color: BauhausTheme.accentRed,
-                                                  ),
-                                                ),
-                                              ],
+                                          const SizedBox(height: 4),
+                                          Container(
+                                            padding: const EdgeInsets
+                                                .symmetric(
+                                                horizontal: 6,
+                                                vertical: 3),
+                                            color: _cobalt,
+                                            child: Text(
+                                              '₹${rec.price.toStringAsFixed(0)}',
+                                              style: _sg(
+                                                  9,
+                                                  FontWeight.w800,
+                                                  BauhausTheme
+                                                      .white),
                                             ),
                                           ),
                                         ],
                                       ),
                                     ),
-                                  ),
-                                );
-                              },
-                            );
-                          },
-                        ),
-                      ),
-                    ],
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    },
                   ),
                 ),
+                const SizedBox(height: 16),
               ],
             ),
           );
@@ -813,45 +971,98 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       ),
     );
   }
-}
 
-class _NutritionCell extends StatelessWidget {
-  final String label;
-  final String value;
+  // ── Helper widgets ───────────────────────────────────────────
 
-  const _NutritionCell(this.label, this.value);
+  Widget _label(String t) => Text(t,
+      style: _sg(11, FontWeight.w700, BauhausTheme.primaryBlack,
+          spacing: 0.5));
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      decoration: BoxDecoration(
-        border: Border.all(color: BauhausTheme.primaryBlack, width: 1),
-        color: BauhausTheme.white,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            label,
-            style: GoogleFonts.chivo(
-              fontSize: 9,
-              fontWeight: FontWeight.w700,
-              color: BauhausTheme.mediumGrey,
-              letterSpacing: 0.3,
+  Widget _sectionHeader(String title) => Container(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+        decoration: const BoxDecoration(
+          border:
+              Border(left: BorderSide(color: BauhausTheme.accentRed, width: 4)),
+        ),
+        child: Text(title,
+            style: _sg(12, FontWeight.w800, BauhausTheme.primaryBlack,
+                spacing: 1.0)),
+      );
+
+  Widget _solidTag(String label, Color color) => Container(
+        padding:
+            const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        color: color,
+        child: Text(label,
+            style: _sg(10, FontWeight.w800, BauhausTheme.white,
+                spacing: 0.5)),
+      );
+
+  Widget _nutCell(String label, String value) => Expanded(
+        child: Container(
+          height: 60,
+          decoration: BoxDecoration(
+            border:
+                Border.all(color: BauhausTheme.primaryBlack, width: 1),
+          ),
+          padding:
+              const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(label,
+                  style: _sg(8, FontWeight.w700, BauhausTheme.mediumGrey,
+                      spacing: 0.3)),
+              const SizedBox(height: 2),
+              Text(value,
+                  style: _sg(
+                      14, FontWeight.w800, BauhausTheme.primaryBlack)),
+            ],
+          ),
+        ),
+      );
+
+  Widget _payToggle(String label, String value, IconData icon) =>
+      Expanded(
+        child: GestureDetector(
+          onTap: () => setState(() => _paymentMethod = value),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            height: 56,
+            color: _paymentMethod == value
+                ? BauhausTheme.primaryBlack
+                : BauhausTheme.white,
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon,
+                    size: 16,
+                    color: _paymentMethod == value
+                        ? BauhausTheme.white
+                        : BauhausTheme.primaryBlack),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(label,
+                      textAlign: TextAlign.center,
+                      style: _sg(
+                          11,
+                          FontWeight.w700,
+                          _paymentMethod == value
+                              ? BauhausTheme.white
+                              : BauhausTheme.primaryBlack)),
+                ),
+              ],
             ),
           ),
-          Text(
-            value,
-            style: GoogleFonts.chivo(
-              fontSize: 13,
-              fontWeight: FontWeight.w800,
-              color: BauhausTheme.primaryBlack,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+        ),
+      );
+
+  Widget _imagePlaceholder() => Container(
+        color: BauhausTheme.patternGrey,
+        child: const Center(
+          child: Icon(Icons.image, size: 60, color: BauhausTheme.mediumGrey),
+        ),
+      );
 }
