@@ -86,7 +86,12 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) context.go('/my-orders');
+      },
+      child: Scaffold(
       appBar: AppBar(
         title: Text(
           'ORDER CONFIRMED',
@@ -94,6 +99,10 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
         ),
         backgroundColor: BauhausTheme.white,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/my-orders'),
+        ),
       ),
       body: Builder(
         builder: (context) {
@@ -479,6 +488,7 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
           );
         },
       ),
+    ),
     );
   }
 }
