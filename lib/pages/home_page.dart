@@ -237,8 +237,8 @@ class _HomePageState extends State<HomePage> {
 
             // ── CATEGORY FILTER ──────────────────────────────────
             Container(
-              color: BauhausTheme.lightGrey,
               decoration: const BoxDecoration(
+                color: BauhausTheme.lightGrey,
                 border: Border(
                   bottom: BorderSide(
                       color: BauhausTheme.primaryBlack, width: 2),
