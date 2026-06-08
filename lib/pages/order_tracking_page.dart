@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../providers/order_provider.dart';
 import '../theme/bauhaus_theme.dart';
+import 'package:go_router/go_router.dart';
 
 class OrderTrackingPage extends StatefulWidget {
   const OrderTrackingPage({super.key});
@@ -189,6 +190,34 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
                               ),
                             ),
                           ],
+                          // Cancel button (only for cancellable statuses)
+                          if (status == 'pending' || status == 'confirmed') ...[
+                            const SizedBox(height: 12),
+                            GestureDetector(
+                              onTap: () => _cancelOrder(
+                                  context, order['id'].toString()),
+                              child: Container(
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 10),
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                      color: Colors.red[700]!, width: 1.5),
+                                  color: Colors.red.withOpacity(0.05),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    'CANCEL ORDER',
+                                    style: GoogleFonts.chivo(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.red[700],
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -201,6 +230,50 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
         },
       ),
     );
+  }
+
+  Future<void> _cancelOrder(BuildContext context, String orderId) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(
+          'CANCEL ORDER',
+          style: GoogleFonts.chivo(fontWeight: FontWeight.w800),
+        ),
+        content: Text(
+          'Are you sure you want to cancel order #${orderId.toUpperCase()}?',
+          style: GoogleFonts.chivo(fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text('NO', style: GoogleFonts.chivo(color: Colors.grey)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text('YES, CANCEL',
+                style: GoogleFonts.chivo(
+                    color: Colors.red, fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && mounted) {
+      final success =
+          await context.read<OrderProvider>().cancelOrder(orderId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              success ? 'Order cancelled.' : 'Failed to cancel order.',
+              style: GoogleFonts.chivo(),
+            ),
+            backgroundColor: success ? Colors.black : Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Color _getStatusColor(String status) {

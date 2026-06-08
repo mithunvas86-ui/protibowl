@@ -173,16 +173,57 @@ class _OrderFormPageState extends State<OrderFormPage> {
                       : () => _showPaymentDialog(context, cart.total),
                   height: 48,
                 ),
-                const SizedBox(height: 16),
-                Center(
-                  child: TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text(
-                      'Continue Shopping',
-                      style: GoogleFonts.chivo(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: BauhausTheme.mediumGrey,
+                const SizedBox(height: 12),
+                GestureDetector(
+                  onTap: () async {
+                    final confirmed = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: Text(
+                          'CANCEL ORDER',
+                          style: GoogleFonts.chivo(fontWeight: FontWeight.w800),
+                        ),
+                        content: Text(
+                          'Clear your cart and go back to the menu?',
+                          style: GoogleFonts.chivo(fontSize: 14),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(ctx).pop(false),
+                            child: Text('NO',
+                                style: GoogleFonts.chivo(color: Colors.grey)),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.of(ctx).pop(true),
+                            child: Text('YES, CANCEL',
+                                style: GoogleFonts.chivo(
+                                    color: Colors.red,
+                                    fontWeight: FontWeight.w700)),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirmed == true && mounted) {
+                      context.read<CartProvider>().clear();
+                      context.go('/');
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(
+                      border:
+                          Border.all(color: Colors.red[700]!, width: 1.5),
+                      color: Colors.red.withOpacity(0.05),
+                    ),
+                    child: Center(
+                      child: Text(
+                        'CANCEL ORDER',
+                        style: GoogleFonts.chivo(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.red[700],
+                          letterSpacing: 0.5,
+                        ),
                       ),
                     ),
                   ),
