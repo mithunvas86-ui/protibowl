@@ -34,6 +34,18 @@
 </head>
 <body>
   <!--
+    Flutter web (CanvasKit) can lose its WebGL/GPU context when this browser
+    tab is backgrounded for a while. When the tab is reopened the canvas comes
+    back black instead of repainting. Reloading the page restores it cleanly.
+    The capturing listener catches the event from Flutter's dynamic canvas.
+  -->
+  <script>
+    window.addEventListener('webglcontextlost', function () {
+      window.location.reload();
+    }, true);
+  </script>
+
+  <!--
     You can customize the "flutter_bootstrap.js" script.
     This is useful to provide a custom configuration to the Flutter loader
     or to give the user feedback during the initialization process.
