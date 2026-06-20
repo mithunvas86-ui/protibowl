@@ -29,7 +29,7 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
     _submitOrderToAPI();
     // Let the success animation + order number show, then take the customer
     // to their orders so they can watch their order's status.
-    _redirectTimer = Timer(const Duration(seconds: 5), () {
+    _redirectTimer = Timer(const Duration(seconds: 2), () {
       if (mounted) context.go('/my-orders');
     });
   }

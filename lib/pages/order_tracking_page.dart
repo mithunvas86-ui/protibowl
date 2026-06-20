@@ -34,8 +34,21 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      // Any back action (system/browser back, swipe) goes Home, not back
+      // through the order/confirmation flow.
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) context.go('/');
+      },
+      child: Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back,
+              color: BauhausTheme.primaryBlack),
+          tooltip: 'Home',
+          onPressed: () => context.go('/'),
+        ),
         title: Text(
           'My Orders',
           style: BauhausTheme.heading(size: 22, weight: FontWeight.w700),
@@ -239,6 +252,7 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
           ),
           );
         },
+      ),
       ),
     );
   }
