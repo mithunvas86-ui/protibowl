@@ -96689,7 +96689,7 @@ f=A.Z(J.jq(f,new A.az0(),m),m)
 n=g.h(0,h)
 n=n==null?i:J.iv(n)
 if(n===!0){n=A.bL(8)
-B.b.N(f,A.b([B.bC,A.aO(i,A.bH(A.b([A.a2("NOTES",i,i,i,A.al().$2$fontSize$fontWeight(10,B.w),i,i),A.a2(g.h(0,h),i,i,i,A.al().$1$fontSize(11),i,i)],j),B.a7,B.v,B.q),B.l,i,i,new A.bf(B.bG,i,i,n,i,i,B.A),i,i,i,B.pt,i,i,i)],j))}if(k.k(s,"pending")||k.k(s,"confirmed")){n=A.bL(12)
+B.b.N(f,A.b([B.bC,A.aO(i,A.bH(A.b([A.a2("NOTES",i,i,i,A.al().$2$fontSize$fontWeight(10,B.w),i,i),A.a2(g.h(0,h),i,i,i,A.al().$1$fontSize(11),i,i)],j),B.a7,B.v,B.q),B.l,i,i,new A.bf(B.bG,i,i,n,i,i,B.A),i,i,i,B.pt,i,i,i)],j))}if(k.k(s,"pending")){n=A.bL(12)
 m=A.ft(B.e5,1)
 B.b.N(f,A.b([B.dM,A.ds(i,A.aO(i,A.eB(A.a2("CANCEL ORDER",i,i,i,A.al().$4$color$fontSize$fontWeight$letterSpacing(B.e5,12,B.w,0.5),i,i),i,i),B.l,i,i,new A.bf(i,i,m,n,i,i,B.A),i,i,i,B.ps,i,i,i),B.H,!1,i,i,i,i,i,i,i,i,i,i,i,i,i,i,new A.az1(r,a,g),i,i,i,i,i,i)],j))}return A.aO(i,A.bH(A.b([l,B.HL,new A.b2(B.cB,A.bH(f,B.a7,B.v,B.q),i)],j),B.a7,B.v,B.q),B.bF,i,i,new A.bf(B.h,i,i,p,o,i,B.A),i,i,B.Il,i,i,i,i)},
 $S:646}
