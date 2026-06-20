@@ -1,50 +1,30 @@
 import 'package:flutter/material.dart';
 import '../theme/bauhaus_theme.dart';
 
+/// Light hairline used sparingly to separate list items / sections.
 class BauhausDivider extends StatelessWidget {
   final double thickness;
   final double height;
-  final bool isStriped;
-  final Color color;
+  final bool isStriped; // retained for API compatibility; rendered as hairline
+  final Color? color;
 
   const BauhausDivider({
     Key? key,
-    this.thickness = 2,
-    this.height = 16,
+    this.thickness = 1,
+    this.height = 24,
     this.isStriped = false,
-    this.color = BauhausTheme.primaryBlack,
+    this.color,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    if (isStriped) {
-      return Container(
-        height: height,
-        decoration: BoxDecoration(
-          border: Border(
-            top: BorderSide(color: color, width: thickness),
-            bottom: BorderSide(color: color, width: thickness),
-          ),
-        ),
-        child: Row(
-          children: List.generate(
-            20,
-            (index) => Expanded(
-              child: Container(
-                color: index.isEven ? color : BauhausTheme.white,
-              ),
-            ),
-          ),
-        ),
-      );
-    }
-
+    final lineColor = color ?? BauhausTheme.patternGrey;
     return SizedBox(
       height: height,
       child: Center(
         child: Container(
           height: thickness,
-          color: color,
+          color: lineColor,
         ),
       ),
     );

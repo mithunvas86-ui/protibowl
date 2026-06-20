@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../providers/cart_provider.dart';
 import '../providers/order_provider.dart';
 import '../theme/bauhaus_theme.dart';
+import '../widgets/status_animation.dart';
 import '../widgets/bauhaus_button.dart';
 
 class OrderFormPage extends StatefulWidget {
@@ -20,7 +21,7 @@ class _OrderFormPageState extends State<OrderFormPage> {
 
   TextStyle _sg(double size, FontWeight weight, Color color,
           {double? spacing}) =>
-      GoogleFonts.spaceGrotesk(
+      GoogleFonts.inter(
           fontSize: size,
           fontWeight: weight,
           color: color,
@@ -31,16 +32,11 @@ class _OrderFormPageState extends State<OrderFormPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'ORDER SUMMARY',
-          style: _sg(22, FontWeight.w800, BauhausTheme.primaryBlack,
-              spacing: 0.5),
+          'Order Summary',
+          style: BauhausTheme.heading(size: 22, weight: FontWeight.w700),
         ),
-        backgroundColor: BauhausTheme.white,
+        backgroundColor: BauhausTheme.background,
         elevation: 0,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(2),
-          child: Container(height: 2, color: BauhausTheme.primaryBlack),
-        ),
       ),
       body: Consumer<CartProvider>(
         builder: (context, cart, _) {
@@ -76,10 +72,13 @@ class _OrderFormPageState extends State<OrderFormPage> {
                         spacing: 0.5)),
                 const SizedBox(height: 10),
                 Container(
-                  decoration: const BoxDecoration(
-                    border: Border.fromBorderSide(
-                        BorderSide(color: BauhausTheme.primaryBlack, width: 2)),
+                  decoration: BoxDecoration(
+                    color: BauhausTheme.white,
+                    borderRadius:
+                        BorderRadius.circular(BauhausTheme.radiusLg),
+                    boxShadow: BauhausTheme.cardShadow,
                   ),
+                  clipBehavior: Clip.antiAlias,
                   child: Column(
                     children: cart.items.asMap().entries.map((entry) {
                       final index = entry.key;
@@ -99,12 +98,14 @@ class _OrderFormPageState extends State<OrderFormPage> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Text(ci.item.name.toUpperCase(),
-                                          style: _sg(12, FontWeight.w700,
-                                              BauhausTheme.primaryBlack)),
+                                      Text(ci.item.name,
+                                          style: BauhausTheme.heading(
+                                              size: 15,
+                                              weight: FontWeight.w600)),
+                                      const SizedBox(height: 2),
                                       Text(
                                           'x${ci.quantity} @ ₹${ci.item.price.toStringAsFixed(0)}',
-                                          style: _sg(11, FontWeight.w400,
+                                          style: _sg(12, FontWeight.w400,
                                               BauhausTheme.mediumGrey)),
                                     ],
                                   ),
@@ -119,8 +120,7 @@ class _OrderFormPageState extends State<OrderFormPage> {
                           ),
                           if (!isLast)
                             const Divider(
-                                color: BauhausTheme.primaryBlack,
-                                thickness: 1,
+                                color: BauhausTheme.patternGrey, thickness: 1,
                                 height: 0),
                         ],
                       );
@@ -131,23 +131,25 @@ class _OrderFormPageState extends State<OrderFormPage> {
 
                 // ── TOTAL ─────────────────────────────────────────
                 Container(
-                  padding: const EdgeInsets.all(14),
+                  padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
-                    border:
-                        Border.all(color: BauhausTheme.accentRed, width: 2),
-                    color:
-                        BauhausTheme.accentRed.withValues(alpha: 0.07),
+                    color: BauhausTheme.white,
+                    borderRadius:
+                        BorderRadius.circular(BauhausTheme.radiusLg),
+                    boxShadow: BauhausTheme.cardShadow,
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text('TOTAL',
-                          style: _sg(16, FontWeight.w800,
-                              BauhausTheme.primaryBlack,
-                              spacing: 1)),
+                      Text('Total',
+                          style: BauhausTheme.heading(
+                              size: 22, weight: FontWeight.w700)),
                       Text('₹${cart.total.toStringAsFixed(0)}',
-                          style: _sg(22, FontWeight.w800,
-                              BauhausTheme.accentRed)),
+                          style: BauhausTheme.body(
+                              size: 24,
+                              weight: FontWeight.w600,
+                              color: BauhausTheme.accentRed)),
                     ],
                   ),
                 ),
@@ -195,15 +197,18 @@ class _OrderFormPageState extends State<OrderFormPage> {
                     }
                   },
                   child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
                     decoration: BoxDecoration(
-                      border: Border.all(color: Colors.red.shade700, width: 1.5),
-                      color: Colors.red.withValues(alpha: 0.05),
+                      borderRadius:
+                          BorderRadius.circular(BauhausTheme.radiusMd),
+                      border:
+                          Border.all(color: BauhausTheme.patternGrey, width: 1),
                     ),
                     child: Center(
-                      child: Text('CANCEL ORDER',
-                          style: _sg(13, FontWeight.w800, Colors.red.shade700,
-                              spacing: 0.5)),
+                      child: Text('Cancel Order',
+                          style: _sg(14, FontWeight.w600,
+                              BauhausTheme.mediumGrey,
+                              spacing: 0.2)),
                     ),
                   ),
                 ),
@@ -242,7 +247,7 @@ class _OrderFormPageState extends State<OrderFormPage> {
             contentPadding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
             titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
             title: Text('CUSTOMER DETAILS',
-                style: GoogleFonts.spaceGrotesk(
+                style: GoogleFonts.inter(
                     fontSize: 17, fontWeight: FontWeight.w800)),
             content: SizedBox(
               width: 480,
@@ -286,7 +291,7 @@ class _OrderFormPageState extends State<OrderFormPage> {
                     Container(
                       decoration: const BoxDecoration(
                         border: Border.fromBorderSide(BorderSide(
-                            color: BauhausTheme.primaryBlack, width: 2)),
+                            color: BauhausTheme.patternGrey, width: 1)),
                       ),
                       child: Column(
                         children: [
@@ -301,8 +306,7 @@ class _OrderFormPageState extends State<OrderFormPage> {
                           ),
                           const Divider(
                               height: 0,
-                              thickness: 1,
-                              color: BauhausTheme.primaryBlack),
+                              thickness: 1, color: BauhausTheme.patternGrey),
                           _RadioRow(
                             icon: Icons.takeout_dining,
                             label: 'TAKEAWAY',
@@ -314,8 +318,7 @@ class _OrderFormPageState extends State<OrderFormPage> {
                           ),
                           const Divider(
                               height: 0,
-                              thickness: 1,
-                              color: BauhausTheme.primaryBlack),
+                              thickness: 1, color: BauhausTheme.patternGrey),
                           _RadioRow(
                             icon: Icons.delivery_dining,
                             label: 'DELIVERY',
@@ -355,7 +358,7 @@ class _OrderFormPageState extends State<OrderFormPage> {
                     Container(
                       decoration: const BoxDecoration(
                         border: Border.fromBorderSide(BorderSide(
-                            color: BauhausTheme.primaryBlack, width: 2)),
+                            color: BauhausTheme.patternGrey, width: 1)),
                       ),
                       child: Column(
                         children: [
@@ -375,8 +378,7 @@ class _OrderFormPageState extends State<OrderFormPage> {
                           ),
                           const Divider(
                               height: 0,
-                              thickness: 1,
-                              color: BauhausTheme.primaryBlack),
+                              thickness: 1, color: BauhausTheme.patternGrey),
                           _PaymentTile(
                             icon: '💳',
                             label: 'ONLINE PAYMENT',
@@ -399,7 +401,7 @@ class _OrderFormPageState extends State<OrderFormPage> {
               TextButton(
                 onPressed: () => Navigator.pop(dialogContext),
                 child: Text('CANCEL',
-                    style: GoogleFonts.spaceGrotesk(
+                    style: GoogleFonts.inter(
                         fontWeight: FontWeight.w700,
                         color: BauhausTheme.mediumGrey)),
               ),
@@ -453,21 +455,41 @@ class _OrderFormPageState extends State<OrderFormPage> {
                           final orderProvider =
                               this.context.read<OrderProvider>();
 
-                          final orderId =
-                              await orderProvider.createOrder(
-                            customerName: name,
-                            customerPhone: phone,
-                            orderType: selectedOrderType!,
-                            paymentMethod: selectedPayment,
-                            items: cart.items.map((item) => {
-                                  'menu_item_id': item.item.id,
-                                  'name': item.item.name,
-                                  'quantity': item.quantity,
-                                  'price': item.item.price,
-                                }).toList(),
-                            totalPrice: totalAmount,
-                            deliveryAddress: deliveryAddress,
-                          );
+                          // Server computes the price from item ids + quantity —
+                          // the client never sends prices/totals.
+                          final serverItems = cart.items
+                              .map((item) => {
+                                    'menu_item_id': item.item.id,
+                                    'quantity': item.quantity,
+                                  })
+                              .toList();
+
+                          final String orderId;
+                          if (selectedPayment == 'online') {
+                            final result =
+                                await orderProvider.placeOnlineOrder(
+                              customerName: name,
+                              customerPhone: phone,
+                              orderType: selectedOrderType!,
+                              items: serverItems,
+                              deliveryAddress: deliveryAddress,
+                            );
+                            if (!result.success) {
+                              if (mounted) {
+                                _showPaymentFailed(result.message);
+                              }
+                              return; // finally{} resets _isSubmitting
+                            }
+                            orderId = result.orderNumber ?? '';
+                          } else {
+                            orderId = await orderProvider.placeCodOrder(
+                              customerName: name,
+                              customerPhone: phone,
+                              orderType: selectedOrderType!,
+                              items: serverItems,
+                              deliveryAddress: deliveryAddress,
+                            );
+                          }
 
                           cart.clear();
                           if (mounted) {
@@ -488,7 +510,7 @@ class _OrderFormPageState extends State<OrderFormPage> {
                       },
                 child: Text(
                   _isSubmitting ? 'PROCESSING...' : 'PLACE ORDER',
-                  style: GoogleFonts.spaceGrotesk(
+                  style: GoogleFonts.inter(
                       fontWeight: FontWeight.w800,
                       color: BauhausTheme.accentRed),
                 ),
@@ -500,9 +522,16 @@ class _OrderFormPageState extends State<OrderFormPage> {
     );
   }
 
+  void _showPaymentFailed(String message) {
+    showDialog(
+      context: context,
+      builder: (_) => _PaymentFailedDialog(message: message),
+    );
+  }
+
   Widget _label(String text) => Text(
         text,
-        style: GoogleFonts.spaceGrotesk(
+        style: GoogleFonts.inter(
           fontSize: 11,
           fontWeight: FontWeight.w700,
           color: BauhausTheme.primaryBlack,
@@ -513,9 +542,9 @@ class _OrderFormPageState extends State<OrderFormPage> {
   InputDecoration _inputDeco(String hint, {bool counter = false}) =>
       InputDecoration(
         hintText: hint,
-        hintStyle: GoogleFonts.spaceGrotesk(
+        hintStyle: GoogleFonts.inter(
             fontSize: 13, color: BauhausTheme.mediumGrey),
-        border: const OutlineInputBorder(borderRadius: BorderRadius.zero),
+        border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         counterText: counter ? null : '',
@@ -546,7 +575,7 @@ class _DeliveryAddressSection extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        border: Border.all(color: const Color(0xFF1565C0), width: 2),
+        border: Border.all(color: const Color(0xFF1565C0), width: 1),
         color: const Color(0xFF1565C0).withValues(alpha: 0.04),
       ),
       child: Column(
@@ -559,7 +588,7 @@ class _DeliveryAddressSection extends StatelessWidget {
               const SizedBox(width: 6),
               Text(
                 'DELIVERY ADDRESS',
-                style: GoogleFonts.spaceGrotesk(
+                style: GoogleFonts.inter(
                   fontSize: 12,
                   fontWeight: FontWeight.w800,
                   color: const Color(0xFF1565C0),
@@ -613,10 +642,10 @@ class _DeliveryAddressSection extends StatelessWidget {
 
   InputDecoration _deco(String hint, {bool counter = false}) => InputDecoration(
         hintText: hint,
-        hintStyle: GoogleFonts.spaceGrotesk(
+        hintStyle: GoogleFonts.inter(
             fontSize: 12, color: Colors.grey.shade500),
         border:
-            const OutlineInputBorder(borderRadius: BorderRadius.zero),
+            const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
         counterText: counter ? null : '',
@@ -650,7 +679,7 @@ class _RadioRow extends StatelessWidget {
       onTap: () => onChanged(value),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 160),
-        color: selected ? BauhausTheme.primaryBlack : Colors.transparent,
+        color: selected ? BauhausTheme.accentRed : Colors.transparent,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         child: Row(
           children: [
@@ -663,7 +692,7 @@ class _RadioRow extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(label,
-                      style: GoogleFonts.spaceGrotesk(
+                      style: GoogleFonts.inter(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
                         color: selected
@@ -671,7 +700,7 @@ class _RadioRow extends StatelessWidget {
                             : BauhausTheme.primaryBlack,
                       )),
                   Text(sublabel,
-                      style: GoogleFonts.spaceGrotesk(
+                      style: GoogleFonts.inter(
                         fontSize: 11,
                         color: selected ? Colors.white70 : Colors.grey,
                       )),
@@ -716,8 +745,7 @@ class _PaymentTile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         color: disabled
             ? Colors.grey.shade100
-            : selected
-                ? BauhausTheme.primaryBlack
+            : selected ? BauhausTheme.accentRed
                 : BauhausTheme.white,
         child: Row(
           children: [
@@ -732,7 +760,7 @@ class _PaymentTile extends StatelessWidget {
                 children: [
                   Text(
                     label,
-                    style: GoogleFonts.spaceGrotesk(
+                    style: GoogleFonts.inter(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
                       color: disabled
@@ -744,7 +772,7 @@ class _PaymentTile extends StatelessWidget {
                   ),
                   Text(
                     sublabel,
-                    style: GoogleFonts.spaceGrotesk(
+                    style: GoogleFonts.inter(
                       fontSize: 11,
                       color: disabled
                           ? Colors.grey.shade400
@@ -761,6 +789,71 @@ class _PaymentTile extends StatelessWidget {
             else if (selected)
               const Icon(Icons.check_circle,
                   color: Colors.white, size: 18),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Self-dismissing dialog with the red ✗ animation for a failed/cancelled payment.
+class _PaymentFailedDialog extends StatefulWidget {
+  final String message;
+  const _PaymentFailedDialog({required this.message});
+
+  @override
+  State<_PaymentFailedDialog> createState() => _PaymentFailedDialogState();
+}
+
+class _PaymentFailedDialogState extends State<_PaymentFailedDialog> {
+  @override
+  void initState() {
+    super.initState();
+    // Auto-close after the animation has played, returning to the order form.
+    Future.delayed(const Duration(milliseconds: 2600), () {
+      if (mounted && Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(BauhausTheme.radiusLg),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const StatusAnimation(success: false, size: 88),
+            const SizedBox(height: 18),
+            Text(
+              'Payment Unsuccessful',
+              textAlign: TextAlign.center,
+              style: BauhausTheme.heading(size: 18, weight: FontWeight.w800),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              widget.message,
+              textAlign: TextAlign.center,
+              style:
+                  BauhausTheme.body(size: 13, color: BauhausTheme.mediumGrey),
+            ),
+            const SizedBox(height: 16),
+            TextButton(
+              onPressed: () => Navigator.of(context).maybePop(),
+              child: Text(
+                'TRY AGAIN',
+                style: GoogleFonts.inter(
+                  fontWeight: FontWeight.w800,
+                  color: BauhausTheme.accentRed,
+                ),
+              ),
+            ),
           ],
         ),
       ),

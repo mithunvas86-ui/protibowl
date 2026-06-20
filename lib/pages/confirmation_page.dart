@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
@@ -5,6 +6,7 @@ import '../services/local_storage_service.dart';
 import '../services/order_api_service.dart';
 import '../theme/bauhaus_theme.dart';
 import '../widgets/bauhaus_button.dart';
+import '../widgets/status_animation.dart';
 
 class ConfirmationPage extends StatefulWidget {
   final String orderId;
@@ -19,11 +21,23 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
   final _apiService = UserOrderAPIService();
   String _apiStatus = 'Submitting order...';
   bool _apiSubmitted = false;
+  Timer? _redirectTimer;
 
   @override
   void initState() {
     super.initState();
     _submitOrderToAPI();
+    // Let the success animation + order number show, then take the customer
+    // to their orders so they can watch their order's status.
+    _redirectTimer = Timer(const Duration(seconds: 5), () {
+      if (mounted) context.go('/my-orders');
+    });
+  }
+
+  @override
+  void dispose() {
+    _redirectTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _submitOrderToAPI() async {
@@ -94,10 +108,10 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
       child: Scaffold(
       appBar: AppBar(
         title: Text(
-          'ORDER CONFIRMED',
-          style: GoogleFonts.chivo(fontSize: 24, fontWeight: FontWeight.w800),
+          'Order Confirmed',
+          style: BauhausTheme.heading(size: 22, weight: FontWeight.w700),
         ),
-        backgroundColor: BauhausTheme.white,
+        backgroundColor: BauhausTheme.background,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -112,7 +126,7 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
             return Center(
               child: Text(
                 'Order #${widget.orderId}',
-                style: GoogleFonts.chivo(
+                style: GoogleFonts.inter(
                     fontSize: 18, fontWeight: FontWeight.w700),
               ),
             );
@@ -132,24 +146,27 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
               children: [
                 // Success Badge
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    border: Border.all(color: Colors.green, width: 2),
-                    color: Colors.green.withValues(alpha: 0.1),
+                    color: const Color(0xFF2E7D32).withValues(alpha: 0.08),
+                    borderRadius:
+                        BorderRadius.circular(BauhausTheme.radiusLg),
                   ),
                   child: Column(
                     children: [
-                      const Icon(Icons.check_circle,
-                          size: 48, color: Colors.green),
-                      const SizedBox(height: 8),
+                      const StatusAnimation(success: true, size: 76),
+                      const SizedBox(height: 12),
                       Text(
-                        '✅ ORDER CONFIRMED',
-                        style: GoogleFonts.chivo(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.green,
-                          letterSpacing: 1,
-                        ),
+                        'Your Order is Confirmed',
+                        style: BauhausTheme.heading(
+                            size: 22, weight: FontWeight.w700),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Thank you — your order is on its way to the kitchen.',
+                        textAlign: TextAlign.center,
+                        style: BauhausTheme.body(
+                            size: 13, color: BauhausTheme.mediumGrey),
                       ),
                     ],
                   ),
@@ -159,7 +176,7 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
                 // Order ID
                 Text(
                   'ORDER NUMBER',
-                  style: GoogleFonts.chivo(
+                  style: GoogleFonts.inter(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                     color: BauhausTheme.mediumGrey,
@@ -171,12 +188,13 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     border:
-                        Border.all(color: BauhausTheme.primaryBlack, width: 2),
+                        Border.all(color: BauhausTheme.patternGrey, width: 1),
+                    borderRadius: BorderRadius.circular(BauhausTheme.radiusMd),
                     color: BauhausTheme.lightGrey,
                   ),
                   child: Text(
                     '#${widget.orderId}',
-                    style: GoogleFonts.chivo(
+                    style: GoogleFonts.inter(
                       fontSize: 24,
                       fontWeight: FontWeight.w800,
                       color: BauhausTheme.primaryBlack,
@@ -189,7 +207,7 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
                 // Customer Info
                 Text(
                   'CUSTOMER DETAILS',
-                  style: GoogleFonts.chivo(
+                  style: GoogleFonts.inter(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                     color: BauhausTheme.mediumGrey,
@@ -201,7 +219,8 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     border:
-                        Border.all(color: BauhausTheme.primaryBlack, width: 1),
+                        Border.all(color: BauhausTheme.patternGrey, width: 1),
+                    borderRadius: BorderRadius.circular(BauhausTheme.radiusMd),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -211,7 +230,7 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
                         children: [
                           Text(
                             'Name:',
-                            style: GoogleFonts.chivo(
+                            style: GoogleFonts.inter(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
                               color: BauhausTheme.mediumGrey,
@@ -219,7 +238,7 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
                           ),
                           Text(
                             customerInfo['name'] ?? 'N/A',
-                            style: GoogleFonts.chivo(
+                            style: GoogleFonts.inter(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
                               color: BauhausTheme.primaryBlack,
@@ -233,7 +252,7 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
                         children: [
                           Text(
                             'Phone:',
-                            style: GoogleFonts.chivo(
+                            style: GoogleFonts.inter(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
                               color: BauhausTheme.mediumGrey,
@@ -241,7 +260,7 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
                           ),
                           Text(
                             customerInfo['phone'] ?? 'N/A',
-                            style: GoogleFonts.chivo(
+                            style: GoogleFonts.inter(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
                               color: BauhausTheme.primaryBlack,
@@ -255,7 +274,7 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
                         children: [
                           Text(
                             'Order Type:',
-                            style: GoogleFonts.chivo(
+                            style: GoogleFonts.inter(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
                               color: BauhausTheme.mediumGrey,
@@ -266,7 +285,7 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
                                 .toString()
                                 .replaceAll('_', ' ')
                                 .toUpperCase(),
-                            style: GoogleFonts.chivo(
+                            style: GoogleFonts.inter(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
                               color: BauhausTheme.accentRed,
@@ -282,7 +301,7 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
                 // Order Items
                 Text(
                   'ORDER DETAILS',
-                  style: GoogleFonts.chivo(
+                  style: GoogleFonts.inter(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                     color: BauhausTheme.mediumGrey,
@@ -293,7 +312,8 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
                 Container(
                   decoration: BoxDecoration(
                     border:
-                        Border.all(color: BauhausTheme.primaryBlack, width: 1),
+                        Border.all(color: BauhausTheme.patternGrey, width: 1),
+                    borderRadius: BorderRadius.circular(BauhausTheme.radiusMd),
                   ),
                   child: items.isNotEmpty
                       ? Column(
@@ -324,7 +344,7 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
                                               Expanded(
                                                 child: Text(
                                                   itemName,
-                                                  style: GoogleFonts.chivo(
+                                                  style: GoogleFonts.inter(
                                                     fontSize: 12,
                                                     fontWeight: FontWeight.w700,
                                                     color: BauhausTheme
@@ -334,7 +354,7 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
                                               ),
                                               Text(
                                                 '₹${(itemPrice * itemQty).toStringAsFixed(0)}',
-                                                style: GoogleFonts.chivo(
+                                                style: GoogleFonts.inter(
                                                   fontSize: 12,
                                                   fontWeight: FontWeight.w800,
                                                   color: BauhausTheme.accentRed,
@@ -345,7 +365,7 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
                                           const SizedBox(height: 4),
                                           Text(
                                             'x$itemQty @ ₹${itemPrice.toStringAsFixed(0)}',
-                                            style: GoogleFonts.chivo(
+                                            style: GoogleFonts.inter(
                                               fontSize: 10,
                                               fontWeight: FontWeight.w500,
                                               color: BauhausTheme.mediumGrey,
@@ -356,8 +376,7 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
                                     ),
                                     if (!isLast)
                                       const Divider(
-                                        color: BauhausTheme.primaryBlack,
-                                        thickness: 1,
+                                        color: BauhausTheme.patternGrey, thickness: 1,
                                         height: 0,
                                       ),
                                   ],
@@ -371,7 +390,7 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
                             padding: const EdgeInsets.all(12),
                             child: Text(
                               'No items in order',
-                              style: GoogleFonts.chivo(
+                              style: GoogleFonts.inter(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
                                 color: BauhausTheme.mediumGrey,
@@ -384,28 +403,27 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
 
                 // Total
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
-                    border: Border.all(color: BauhausTheme.accentRed, width: 2),
-                    color: BauhausTheme.accentRed.withValues(alpha: 0.1),
+                    color: BauhausTheme.white,
+                    borderRadius:
+                        BorderRadius.circular(BauhausTheme.radiusLg),
+                    boxShadow: BauhausTheme.cardShadow,
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        'TOTAL AMOUNT',
-                        style: GoogleFonts.chivo(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                          color: BauhausTheme.primaryBlack,
-                          letterSpacing: 1,
-                        ),
+                        'Total Amount',
+                        style: BauhausTheme.heading(
+                            size: 20, weight: FontWeight.w700),
                       ),
                       Text(
                         '₹${totalPrice.toStringAsFixed(0)}',
-                        style: GoogleFonts.chivo(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
+                        style: BauhausTheme.body(
+                          size: 24,
+                          weight: FontWeight.w600,
                           color: BauhausTheme.accentRed,
                         ),
                       ),
@@ -416,24 +434,20 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
 
                 // Status Message
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    border: Border.all(
-                      color: _apiSubmitted && _apiStatus.startsWith('✅')
-                          ? Colors.green
-                          : Colors.blue,
-                      width: 1,
-                    ),
+                    borderRadius:
+                        BorderRadius.circular(BauhausTheme.radiusMd),
                     color: (_apiSubmitted && _apiStatus.startsWith('✅')
-                            ? Colors.green
+                            ? const Color(0xFF2E7D32)
                             : Colors.blue)
-                        .withValues(alpha: 0.1),
+                        .withValues(alpha: 0.08),
                   ),
                   child: Column(
                     children: [
                       Text(
                         _apiStatus,
-                        style: GoogleFonts.chivo(
+                        style: GoogleFonts.inter(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                           color: _apiSubmitted && _apiStatus.startsWith('✅')
@@ -444,7 +458,7 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
                       const SizedBox(height: 8),
                       Text(
                         '🖨️ Bill printing to thermal printer',
-                        style: GoogleFonts.chivo(
+                        style: GoogleFonts.inter(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                           color: Colors.blue[900],
@@ -468,13 +482,14 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     decoration: BoxDecoration(
                       border: Border.all(
-                          color: BauhausTheme.primaryBlack, width: 2),
+                          color: BauhausTheme.patternGrey, width: 1),
+                    borderRadius: BorderRadius.circular(BauhausTheme.radiusMd),
                       color: BauhausTheme.white,
                     ),
                     child: Text(
                       'CONTINUE SHOPPING',
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.chivo(
+                      style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w800,
                         color: BauhausTheme.primaryBlack,

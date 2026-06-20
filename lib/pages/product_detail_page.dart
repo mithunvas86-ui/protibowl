@@ -24,7 +24,8 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   late TextEditingController _nameCtrl;
   late TextEditingController _phoneCtrl;
 
-  static const Color _cobalt = Color(0xFF1B4FD8);
+  // Unified to the terracotta accent (was cobalt blue, off-palette).
+  static const Color _cobalt = BauhausTheme.accentRed;
   static const Color _vegGreen = Color(0xFF1B7A34);
   static const Color _proteinOrange = Color(0xFFCC6200);
 
@@ -68,7 +69,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
   TextStyle _sg(double size, FontWeight weight, Color color,
           {double? spacing}) =>
-      GoogleFonts.spaceGrotesk(
+      GoogleFonts.inter(
           fontSize: size,
           fontWeight: weight,
           color: color,
@@ -85,7 +86,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
       builder: (dCtx) => StatefulBuilder(
         builder: (ctx, setS) => AlertDialog(
           shape:
-              const RoundedRectangleBorder(borderRadius: BorderRadius.zero),
+              const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
           titlePadding: EdgeInsets.zero,
           title: Container(
             padding:
@@ -124,7 +125,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 Container(
                   decoration: BoxDecoration(
                     border: Border.all(
-                        color: BauhausTheme.primaryBlack, width: 2),
+                        color: BauhausTheme.patternGrey, width: 1),
                   ),
                   child: Column(children: [
                     RadioListTile<String>(
@@ -186,32 +187,38 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   return;
                 }
                 try {
-                  final spiceLabels = ['MILD', 'MEDIUM', 'HOT'];
-                  final customStr = [
-                    'Spice: ${spiceLabels[_spiceLevel]}',
-                    ..._addons.entries
-                        .where((e) => e.value)
-                        .map((e) =>
-                            '${e.key} (+₹${_addonPrices[e.key]?.toStringAsFixed(0)})'),
-                  ].join(', ');
-                  final totalPrice = _total(item.price);
-                  final orderId =
-                      await this.context.read<OrderProvider>().createOrder(
-                    customerName: _nameCtrl.text,
-                    customerPhone: _phoneCtrl.text,
-                    orderType: orderType!,
-                    paymentMethod: _paymentMethod,
-                    items: [
-                      {
-                        'menu_item_id': item.id,
-                        'name': item.name,
-                        'quantity': _quantity,
-                        'price': item.price + _addonTotal,
-                        'customizations': customStr,
+                  // Server computes price from item id + quantity (DB price).
+                  // NOTE: add-on/spice pricing is not yet applied server-side —
+                  // see SECURITY_HARDENING.md (server-side add-on pricing TODO).
+                  final serverItems = [
+                    {'menu_item_id': item.id, 'quantity': _quantity}
+                  ];
+                  final orderProvider = this.context.read<OrderProvider>();
+                  final String orderId;
+                  if (_paymentMethod == 'online') {
+                    final result = await orderProvider.placeOnlineOrder(
+                      customerName: _nameCtrl.text,
+                      customerPhone: _phoneCtrl.text,
+                      orderType: orderType!,
+                      items: serverItems,
+                    );
+                    if (!result.success) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(this.context).showSnackBar(SnackBar(
+                            content: Text(result.message),
+                            backgroundColor: Colors.red));
                       }
-                    ],
-                    totalPrice: totalPrice,
-                  );
+                      return;
+                    }
+                    orderId = result.orderNumber ?? '';
+                  } else {
+                    orderId = await orderProvider.placeCodOrder(
+                      customerName: _nameCtrl.text,
+                      customerPhone: _phoneCtrl.text,
+                      orderType: orderType!,
+                      items: serverItems,
+                    );
+                  }
                   if (mounted) {
                     if (dCtx.mounted) Navigator.pop(dCtx);
                     this.context.go('/confirmation?orderId=$orderId');
@@ -242,9 +249,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: BauhausTheme.white,
+      backgroundColor: BauhausTheme.background,
       appBar: AppBar(
-        backgroundColor: BauhausTheme.white,
+        backgroundColor: BauhausTheme.background,
         elevation: 0,
         iconTheme:
             const IconThemeData(color: BauhausTheme.primaryBlack),
@@ -345,7 +352,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                           height: 24,
                           decoration: BoxDecoration(
                             border: Border.all(
-                                color: _vegGreen, width: 2),
+                                color: _vegGreen, width: 1),
                           ),
                           alignment: Alignment.center,
                           child: Container(
@@ -364,10 +371,14 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                         right: 14,
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 6),
-                          color: BauhausTheme.accentRed,
+                              horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: BauhausTheme.accentRed,
+                            borderRadius: BorderRadius.circular(
+                                BauhausTheme.radiusPill),
+                          ),
                           child: Text('PLANT BASED',
-                              style: _sg(11, FontWeight.w800,
+                              style: _sg(11, FontWeight.w700,
                                   BauhausTheme.white,
                                   spacing: 0.8)),
                         ),
@@ -375,11 +386,15 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                       // Category label — bottom left
                       Positioned(
                         bottom: 14,
-                        left: 0,
+                        left: 14,
                         child: Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 6),
-                          color: BauhausTheme.primaryBlack,
+                          decoration: BoxDecoration(
+                            color: BauhausTheme.surfaceBlack,
+                            borderRadius: BorderRadius.circular(
+                                BauhausTheme.radiusPill),
+                          ),
                           child: Text(
                               item.category.toUpperCase(),
                               style: _sg(11, FontWeight.w700,
@@ -390,7 +405,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     ],
                   ),
                 ),
-                Container(height: 2, color: BauhausTheme.primaryBlack),
+                Container(height: 1, color: BauhausTheme.patternGrey),
 
                 // ── TITLE + PRICE ────────────────────────────
                 Padding(
@@ -400,21 +415,21 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     children: [
                       Expanded(
                         child: Text(
-                          item.name.toUpperCase(),
-                          style: _sg(22, FontWeight.w800,
-                              BauhausTheme.primaryBlack,
-                              spacing: 0.4),
+                          item.name,
+                          style: BauhausTheme.heading(
+                              size: 26, weight: FontWeight.w700),
                         ),
                       ),
                       const SizedBox(width: 12),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 10),
-                        color: _cobalt,
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
                         child: Text(
                           '₹${item.price.toStringAsFixed(0)}',
-                          style: _sg(22, FontWeight.w800,
-                              BauhausTheme.white),
+                          style: BauhausTheme.body(
+                              size: 24,
+                              weight: FontWeight.w600,
+                              color: BauhausTheme.accentRed,
+                              spacing: -0.3),
                         ),
                       ),
                     ],
@@ -454,7 +469,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     ),
                   ),
                 const SizedBox(height: 20),
-                Container(height: 2, color: BauhausTheme.primaryBlack),
+                Container(height: 1, color: BauhausTheme.patternGrey),
 
                 // ── NUTRITION GRID ───────────────────────────
                 _sectionHeader('NUTRITION / SERVING'),
@@ -467,7 +482,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     _nutCell('FAT', '8g'),
                   ]),
                 ),
-                Container(height: 2, color: BauhausTheme.primaryBlack),
+                Container(height: 1, color: BauhausTheme.patternGrey),
 
                 // ── SPICE LEVEL ──────────────────────────────
                 _sectionHeader('SPICE LEVEL'),
@@ -477,8 +492,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     height: 48,
                     decoration: BoxDecoration(
                       border: Border.all(
-                          color: BauhausTheme.primaryBlack,
-                          width: 2),
+                          color: BauhausTheme.patternGrey, width: 1),
                     ),
                     child: Row(
                       children: List.generate(3, (i) {
@@ -521,7 +535,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     ),
                   ),
                 ),
-                Container(height: 2, color: BauhausTheme.primaryBlack),
+                Container(height: 1, color: BauhausTheme.patternGrey),
 
                 // ── STANDARD INCLUDES ────────────────────────
                 _sectionHeader('STANDARD INCLUDES'),
@@ -530,8 +544,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   child: Container(
                     decoration: BoxDecoration(
                       border: Border.all(
-                          color: BauhausTheme.primaryBlack,
-                          width: 1),
+                          color: BauhausTheme.patternGrey, width: 1),
                     ),
                     child: Column(
                       children: _includes
@@ -571,7 +584,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     ),
                   ),
                 ),
-                Container(height: 2, color: BauhausTheme.primaryBlack),
+                Container(height: 1, color: BauhausTheme.patternGrey),
 
                 // ── ADD-ONS ──────────────────────────────────
                 _sectionHeader('ADD-ONS (OPTIONAL)'),
@@ -580,8 +593,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   child: Container(
                     decoration: BoxDecoration(
                       border: Border.all(
-                          color: BauhausTheme.primaryBlack,
-                          width: 2),
+                          color: BauhausTheme.patternGrey, width: 1),
                     ),
                     child: Column(
                       children: _addons.keys
@@ -620,7 +632,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                             ? _cobalt
                                             : BauhausTheme
                                                 .primaryBlack,
-                                        width: 2),
+                                        width: 1),
                                     color: sel
                                         ? _cobalt
                                         : BauhausTheme.white,
@@ -667,7 +679,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     ),
                   ),
                 ),
-                Container(height: 2, color: BauhausTheme.primaryBlack),
+                Container(height: 1, color: BauhausTheme.patternGrey),
 
                 // ── QUANTITY ─────────────────────────────────
                 _sectionHeader('QUANTITY'),
@@ -675,49 +687,30 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
                   child: Row(
                     children: [
-                      GestureDetector(
-                        onTap: () {
-                          if (_quantity > 1)
-                            setState(() => _quantity--);
-                        },
-                        child: Container(
-                          width: 48,
-                          height: 48,
-                          color: BauhausTheme.primaryBlack,
-                          alignment: Alignment.center,
-                          child: const Icon(Icons.remove,
-                              color: BauhausTheme.white,
-                              size: 20),
-                        ),
-                      ),
                       Container(
-                        width: 64,
-                        height: 48,
-                        decoration: const BoxDecoration(
-                          border: Border(
-                            top: BorderSide(
-                                color: BauhausTheme.primaryBlack,
-                                width: 2),
-                            bottom: BorderSide(
-                                color: BauhausTheme.primaryBlack,
-                                width: 2),
-                          ),
+                        decoration: BoxDecoration(
+                          color: BauhausTheme.lightGrey,
+                          borderRadius: BorderRadius.circular(
+                              BauhausTheme.radiusPill),
                         ),
-                        alignment: Alignment.center,
-                        child: Text('$_quantity',
-                            style: _sg(22, FontWeight.w800,
-                                BauhausTheme.primaryBlack)),
-                      ),
-                      GestureDetector(
-                        onTap: () => setState(() => _quantity++),
-                        child: Container(
-                          width: 48,
-                          height: 48,
-                          color: BauhausTheme.primaryBlack,
-                          alignment: Alignment.center,
-                          child: const Icon(Icons.add,
-                              color: BauhausTheme.white,
-                              size: 20),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _qtyBtn(Icons.remove, () {
+                              if (_quantity > 1) {
+                                setState(() => _quantity--);
+                              }
+                            }),
+                            SizedBox(
+                              width: 40,
+                              child: Text('$_quantity',
+                                  textAlign: TextAlign.center,
+                                  style: _sg(18, FontWeight.w700,
+                                      BauhausTheme.primaryBlack)),
+                            ),
+                            _qtyBtn(Icons.add,
+                                () => setState(() => _quantity++)),
+                          ],
                         ),
                       ),
                       const Spacer(),
@@ -730,15 +723,17 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                                   spacing: 0.5)),
                           Text(
                             '₹${_total(item.price).toStringAsFixed(0)}',
-                            style: _sg(
-                                24, FontWeight.w800, _cobalt),
+                            style: BauhausTheme.body(
+                                size: 24,
+                                weight: FontWeight.w600,
+                                color: BauhausTheme.accentRed),
                           ),
                         ],
                       ),
                     ],
                   ),
                 ),
-                Container(height: 2, color: BauhausTheme.primaryBlack),
+                Container(height: 1, color: BauhausTheme.patternGrey),
 
                 // ── PAYMENT METHOD ───────────────────────────
                 _sectionHeader('PAYMENT METHOD'),
@@ -748,14 +743,13 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     height: 56,
                     decoration: BoxDecoration(
                       border: Border.all(
-                          color: BauhausTheme.primaryBlack,
-                          width: 2),
+                          color: BauhausTheme.patternGrey, width: 1),
                     ),
                     child: Row(children: [
                       _payToggle('PAY ONLINE', 'online',
                           Icons.credit_card_outlined),
                       Container(
-                          width: 2,
+                          width: 1,
                           height: 56,
                           color: BauhausTheme.primaryBlack),
                       _payToggle('CASH ON DELIVERY', 'cod',
@@ -782,8 +776,9 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                           height: 52,
                           decoration: BoxDecoration(
                             border: Border.all(
-                                color: BauhausTheme.primaryBlack,
-                                width: 2),
+                                color: BauhausTheme.primaryBlack, width: 1.5),
+                            borderRadius: BorderRadius.circular(
+                                BauhausTheme.radiusMd),
                             color: inCart
                                 ? BauhausTheme.lightGrey
                                 : BauhausTheme.white,
@@ -827,23 +822,31 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                     onTap: () => _showOrderDialog(context, item),
                     child: Container(
                       height: 58,
-                      color: BauhausTheme.accentRed,
+                      decoration: BoxDecoration(
+                        color: BauhausTheme.accentRed,
+                        borderRadius:
+                            BorderRadius.circular(BauhausTheme.radiusMd),
+                      ),
                       alignment: Alignment.center,
                       child: Row(
                         mainAxisAlignment:
                             MainAxisAlignment.center,
                         children: [
-                          Text('PLACE ORDER',
+                          Text('ADD TO ORDER',
                               style: _sg(
-                                  16,
-                                  FontWeight.w800,
+                                  15,
+                                  FontWeight.w600,
                                   BauhausTheme.white,
-                                  spacing: 1.2)),
+                                  spacing: 0.5)),
                           const SizedBox(width: 14),
                           Container(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 10, vertical: 5),
-                            color: Colors.black26,
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(
+                                  BauhausTheme.radiusSm),
+                            ),
                             child: Text(
                               '₹${_total(item.price).toStringAsFixed(0)}',
                               style: _sg(14, FontWeight.w800,
@@ -856,7 +859,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                Container(height: 2, color: BauhausTheme.primaryBlack),
+                Container(height: 1, color: BauhausTheme.patternGrey),
 
                 // ── RECOMMENDED ──────────────────────────────
                 _sectionHeader('YOU MAY ALSO LIKE'),
@@ -991,19 +994,22 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
 
   Widget _solidTag(String label, Color color) => Container(
         padding:
-            const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        color: color,
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.12),
+          borderRadius: BorderRadius.circular(BauhausTheme.radiusPill),
+        ),
         child: Text(label,
-            style: _sg(10, FontWeight.w800, BauhausTheme.white,
-                spacing: 0.5)),
+            style: _sg(10, FontWeight.w700, color, spacing: 0.5)),
       );
 
   Widget _nutCell(String label, String value) => Expanded(
         child: Container(
-          height: 60,
+          height: 64,
+          margin: const EdgeInsets.symmetric(horizontal: 3),
           decoration: BoxDecoration(
-            border:
-                Border.all(color: BauhausTheme.primaryBlack, width: 1),
+            color: BauhausTheme.lightGrey,
+            borderRadius: BorderRadius.circular(BauhausTheme.radiusSm),
           ),
           padding:
               const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
@@ -1055,6 +1061,18 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                 ),
               ],
             ),
+          ),
+        ),
+      );
+
+  Widget _qtyBtn(IconData icon, VoidCallback onTap) => InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(BauhausTheme.radiusPill),
+        child: SizedBox(
+          width: 44,
+          height: 44,
+          child: Center(
+            child: Icon(icon, size: 18, color: BauhausTheme.primaryBlack),
           ),
         ),
       );

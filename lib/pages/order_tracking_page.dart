@@ -37,10 +37,10 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'MY ORDERS',
-          style: GoogleFonts.chivo(fontSize: 24, fontWeight: FontWeight.w800),
+          'My Orders',
+          style: BauhausTheme.heading(size: 22, weight: FontWeight.w700),
         ),
-        backgroundColor: BauhausTheme.white,
+        backgroundColor: BauhausTheme.background,
         elevation: 0,
       ),
       body: Consumer<OrderProvider>(
@@ -65,13 +65,13 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
                         const SizedBox(height: 16),
                         Text(
                           'NO ORDERS YET',
-                          style: GoogleFonts.chivo(
+                          style: GoogleFonts.inter(
                               fontSize: 18, fontWeight: FontWeight.w700),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           'Pull down to refresh',
-                          style: GoogleFonts.chivo(
+                          style: GoogleFonts.inter(
                               fontSize: 13, color: Colors.grey),
                         ),
                       ],
@@ -98,54 +98,65 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
               return Container(
                 margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
-                  border:
-                      Border.all(color: BauhausTheme.primaryBlack, width: 2),
                   color: BauhausTheme.white,
+                  borderRadius: BorderRadius.circular(BauhausTheme.radiusLg),
+                  boxShadow: BauhausTheme.cardShadow,
                 ),
+                clipBehavior: Clip.antiAlias,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Header
                     Container(
-                      padding: const EdgeInsets.all(12),
-                      color: statusColor,
+                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'ORDER #${order['id'].toString().toUpperCase()}',
-                                style: GoogleFonts.chivo(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w700,
-                                  color: BauhausTheme.white,
-                                  letterSpacing: 0.5,
-                                ),
+                                'Order #${order['id'].toString().toUpperCase()}',
+                                style: BauhausTheme.heading(
+                                    size: 16, weight: FontWeight.w600),
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                status.toUpperCase(),
-                                style: GoogleFonts.chivo(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                  color: BauhausTheme.white,
+                              const SizedBox(height: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: statusColor.withOpacity(0.12),
+                                  borderRadius: BorderRadius.circular(
+                                      BauhausTheme.radiusPill),
+                                ),
+                                child: Text(
+                                  status.toUpperCase(),
+                                  style: GoogleFonts.inter(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    color: statusColor,
+                                    letterSpacing: 0.6,
+                                  ),
                                 ),
                               ),
                             ],
                           ),
                           Text(
                             '₹${order['total_price']}',
-                            style: GoogleFonts.chivo(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w800,
-                              color: BauhausTheme.white,
+                            style: BauhausTheme.body(
+                              size: 18,
+                              weight: FontWeight.w600,
+                              color: BauhausTheme.accentRed,
                             ),
                           ),
                         ],
                       ),
                     ),
+                    const Divider(
+                        height: 1,
+                        thickness: 1,
+                        color: BauhausTheme.patternGrey),
                     // Items
                     Padding(
                       padding: const EdgeInsets.all(12),
@@ -157,7 +168,7 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
                               padding: const EdgeInsets.only(bottom: 8),
                               child: Text(
                                 '${item['quantity']}x Item - ₹${item['price']}',
-                                style: GoogleFonts.chivo(fontSize: 12),
+                                style: GoogleFonts.inter(fontSize: 12),
                               ),
                             );
                           }),
@@ -165,26 +176,25 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
                               false) ...[
                             const SizedBox(height: 8),
                             Container(
-                              padding: const EdgeInsets.all(8),
+                              padding: const EdgeInsets.all(10),
                               decoration: BoxDecoration(
-                                border: Border.all(
-                                  color: BauhausTheme.primaryBlack,
-                                  width: 1,
-                                ),
+                                color: BauhausTheme.lightGrey,
+                                borderRadius: BorderRadius.circular(
+                                    BauhausTheme.radiusSm),
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     'NOTES',
-                                    style: GoogleFonts.chivo(
+                                    style: GoogleFonts.inter(
                                       fontSize: 10,
                                       fontWeight: FontWeight.w700,
                                     ),
                                   ),
                                   Text(
                                     order['special_instructions'],
-                                    style: GoogleFonts.chivo(fontSize: 11),
+                                    style: GoogleFonts.inter(fontSize: 11),
                                   ),
                                 ],
                               ),
@@ -198,16 +208,17 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
                                   context, order['id'].toString()),
                               child: Container(
                                 padding:
-                                    const EdgeInsets.symmetric(vertical: 10),
+                                    const EdgeInsets.symmetric(vertical: 12),
                                 decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(
+                                      BauhausTheme.radiusMd),
                                   border: Border.all(
-                                      color: Colors.red[700]!, width: 1.5),
-                                  color: Colors.red.withOpacity(0.05),
+                                      color: Colors.red[700]!, width: 1),
                                 ),
                                 child: Center(
                                   child: Text(
                                     'CANCEL ORDER',
-                                    style: GoogleFonts.chivo(
+                                    style: GoogleFonts.inter(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w700,
                                       color: Colors.red[700],
@@ -238,21 +249,21 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
       builder: (ctx) => AlertDialog(
         title: Text(
           'CANCEL ORDER',
-          style: GoogleFonts.chivo(fontWeight: FontWeight.w800),
+          style: GoogleFonts.inter(fontWeight: FontWeight.w800),
         ),
         content: Text(
           'Are you sure you want to cancel order #${orderId.toUpperCase()}?',
-          style: GoogleFonts.chivo(fontSize: 14),
+          style: GoogleFonts.inter(fontSize: 14),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text('NO', style: GoogleFonts.chivo(color: Colors.grey)),
+            child: Text('NO', style: GoogleFonts.inter(color: Colors.grey)),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             child: Text('YES, CANCEL',
-                style: GoogleFonts.chivo(
+                style: GoogleFonts.inter(
                     color: Colors.red, fontWeight: FontWeight.w700)),
           ),
         ],
@@ -267,7 +278,7 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
           SnackBar(
             content: Text(
               success ? 'Order cancelled.' : 'Failed to cancel order.',
-              style: GoogleFonts.chivo(),
+              style: GoogleFonts.inter(),
             ),
             backgroundColor: success ? Colors.black : Colors.red,
           ),

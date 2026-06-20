@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/bauhaus_theme.dart';
 
+/// Primary terracotta CTA — rounded, soft, inviting.
 class BauhausButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
@@ -8,6 +9,7 @@ class BauhausButton extends StatelessWidget {
   final bool isDisabled;
   final double height;
   final double? width;
+  final IconData? icon;
 
   const BauhausButton({
     Key? key,
@@ -15,61 +17,73 @@ class BauhausButton extends StatelessWidget {
     this.onPressed,
     this.isLoading = false,
     this.isDisabled = false,
-    this.height = 44,
+    this.height = 52,
     this.width,
+    this.icon,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final disabled = isDisabled || isLoading;
     return SizedBox(
       height: height,
       width: width ?? double.infinity,
       child: ElevatedButton(
-        onPressed: isDisabled || isLoading ? null : onPressed,
+        onPressed: disabled ? null : onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: isDisabled ? BauhausTheme.patternGrey : BauhausTheme.primaryBlack,
-          foregroundColor: isDisabled ? BauhausTheme.mediumGrey : BauhausTheme.white,
+          backgroundColor: BauhausTheme.accentRed,
+          foregroundColor: BauhausTheme.onAccent,
+          disabledBackgroundColor: BauhausTheme.surfaceContainerHigh,
+          disabledForegroundColor: BauhausTheme.mediumGrey,
           elevation: 0,
+          shadowColor: Colors.transparent,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.zero,
-            side: BorderSide(
-              color: isDisabled ? BauhausTheme.mediumGrey : BauhausTheme.primaryBlack,
-              width: 2,
-            ),
+            borderRadius: BorderRadius.circular(BauhausTheme.radiusMd),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
         ),
         child: isLoading
             ? const SizedBox(
-                height: 24,
-                width: 24,
+                height: 22,
+                width: 22,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(BauhausTheme.primaryBlack),
+                  valueColor:
+                      AlwaysStoppedAnimation<Color>(BauhausTheme.onAccent),
                 ),
               )
-            : Text(label),
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (icon != null) ...[
+                    Icon(icon, size: 20),
+                    const SizedBox(width: 8),
+                  ],
+                  Text(label),
+                ],
+              ),
       ),
     );
   }
 }
 
+/// Secondary action — charcoal outline on the off-white surface.
 class BauhausOutlineButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
   final bool isLoading;
   final double height;
   final double? width;
-  final Color borderColor;
+  final Color? borderColor;
 
   const BauhausOutlineButton({
     Key? key,
     required this.label,
     this.onPressed,
     this.isLoading = false,
-    this.height = 56,
+    this.height = 52,
     this.width,
-    this.borderColor = BauhausTheme.primaryBlack,
+    this.borderColor,
   }) : super(key: key);
 
   @override
@@ -81,17 +95,21 @@ class BauhausOutlineButton extends StatelessWidget {
         onPressed: isLoading ? null : onPressed,
         style: OutlinedButton.styleFrom(
           foregroundColor: BauhausTheme.primaryBlack,
-          side: BorderSide(color: borderColor, width: 2),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          side: BorderSide(
+              color: borderColor ?? BauhausTheme.primaryBlack, width: 1.5),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(BauhausTheme.radiusMd),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
         ),
         child: isLoading
             ? const SizedBox(
-                height: 24,
-                width: 24,
+                height: 22,
+                width: 22,
                 child: CircularProgressIndicator(
                   strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(BauhausTheme.primaryBlack),
+                  valueColor:
+                      AlwaysStoppedAnimation<Color>(BauhausTheme.primaryBlack),
                 ),
               )
             : Text(label),

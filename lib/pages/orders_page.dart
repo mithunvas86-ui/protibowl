@@ -8,12 +8,12 @@ class OrdersPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('My Orders', style: GoogleFonts.chivo(fontSize: 24, fontWeight: FontWeight.w800)),
+        title: Text('My Orders', style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.w800)),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
       body: Center(
-        child: Text('Your Orders', style: GoogleFonts.chivo(fontSize: 18)),
+        child: Text('Your Orders', style: GoogleFonts.inter(fontSize: 18)),
       ),
     );
   }

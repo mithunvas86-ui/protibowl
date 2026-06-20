@@ -3,6 +3,7 @@ import '../services/local_storage_service.dart';
 import '../services/shared_orders_service.dart';
 import '../services/guest_customer_tracking_service.dart';
 import '../services/supabase_service.dart';
+import '../services/razorpay_service.dart';
 
 class OrderProvider extends ChangeNotifier {
   List<Map<String, dynamic>> _orders = [];
@@ -14,223 +15,198 @@ class OrderProvider extends ChangeNotifier {
   List<Map<String, dynamic>> get orders => _orders;
   bool get isLoading => _isLoading;
 
-  Future<String> createOrder({
+  /// Online order: server computes the price, creates the Razorpay order,
+  /// runs checkout, and finalizes the order after verifying the signature.
+  /// The client never sends prices.
+  Future<PlaceOrderResult> placeOnlineOrder({
     required String customerName,
     required String customerPhone,
     required String orderType,
-    required String paymentMethod,
-    required List<Map<String, dynamic>> items,
-    required double totalPrice,
+    required List<Map<String, dynamic>> items, // [{menu_item_id, quantity}]
     Map<String, String>? deliveryAddress,
   }) async {
-    try {
-      final customerId = _guestCustomerTracking.generateCustomerId();
-      final createdAt = DateTime.now().toIso8601String();
+    final r = await RazorpayService().placeOnlineOrder(
+      items: items,
+      customerName: customerName,
+      customerPhone: customerPhone,
+      orderType: orderType,
+      deliveryAddress: deliveryAddress,
+    );
+    if (!r.success) return r;
 
-      await _localStorage.saveCustomerInfo(
-        name: customerName,
-        phone: customerPhone,
-        orderType: orderType,
-      );
+    await _mirrorLocal(
+      orderNumber: r.orderNumber ?? '',
+      dbOrderId: r.dbOrderId,
+      lineItems: r.items ?? const [],
+      totalPrice: r.totalPrice ?? 0,
+      customerName: customerName,
+      customerPhone: customerPhone,
+      orderType: orderType,
+      deliveryAddress: deliveryAddress,
+      paymentMethod: 'online',
+      paymentDetails: {'provider': 'razorpay', 'status': 'paid'},
+    );
+    await fetchOrders();
+    return r;
+  }
 
-      String? supabaseId;
-      String orderId = await _localStorage.generateOrderId(customerPhone: customerPhone); // final fallback
-
-      // Layer 1: try RPC for atomic sequential number
-      String? rpcNumber;
-      try {
-        final rpcResult =
-            await SupabaseService.client.rpc('get_next_order_number');
-        final str = rpcResult?.toString().trim() ?? '';
-        if (str.length == 6) rpcNumber = str;
-      } catch (_) {}
-
-      // Layer 2: insert to Supabase; trigger sets order_number if RPC failed
-      try {
-        final insertData = <String, dynamic>{
-          'order_type': orderType,
-          'customer_name': customerName,
-          'customer_phone': customerPhone,
-          'payment_method': paymentMethod,
-          'total_price': totalPrice,
-          'status': 'pending',
-          'customer_info': {
-            'name': customerName,
-            'phone': customerPhone,
-            'order_type': orderType,
-            if (deliveryAddress != null) 'delivery_address': deliveryAddress,
-          },
-          'items': items,
-          'created_at': createdAt,
-          if (deliveryAddress != null) 'delivery_address': deliveryAddress,
-        };
-        if (rpcNumber != null) insertData['order_number'] = rpcNumber;
-
-        final res = await SupabaseService.client
-            .from(SupabaseService.tableOrders)
-            .insert(insertData)
-            .select('id, order_number')
-            .single();
-
-        supabaseId = res['id'] as String;
-        final dbNumber = res['order_number'] as String?;
-        if (dbNumber != null && dbNumber.length == 6) {
-          orderId = dbNumber; // DB value (trigger or RPC)
-        } else if (rpcNumber != null) {
-          orderId = rpcNumber;
-        }
-
-        for (final item in items) {
-          await SupabaseService.client
-              .from(SupabaseService.tableOrderItems)
-              .insert({
-                'order_id': supabaseId,
-                'menu_item_id': item['menu_item_id'],
-                'name': item['name'],
-                'quantity': item['quantity'],
-                'price': item['price'],
-              });
-        }
-      } catch (e) {
-        // Layer 3: full local fallback — use RPC number if we got one
-        if (rpcNumber != null) orderId = rpcNumber;
-        print('⚠️ Supabase write failed: $e');
-      }
-
-      // 2. Save locally with supabase_id so we can sync status later
-      final orderData = {
-        'id': orderId,
-        'supabase_id': supabaseId,
-        'customer_id': customerId,
-        'items': items,
-        'total_price': totalPrice,
+  /// Cash order: server computes the price and stores the order. No payment.
+  Future<String> placeCodOrder({
+    required String customerName,
+    required String customerPhone,
+    required String orderType,
+    required List<Map<String, dynamic>> items, // [{menu_item_id, quantity}]
+    Map<String, String>? deliveryAddress,
+  }) async {
+    final res = await SupabaseService.client.functions.invoke(
+      'razorpay-create-order',
+      body: {
+        'payment_method': 'cod',
         'order_type': orderType,
-        'customer_info': {
-          'name': customerName,
-          'phone': customerPhone,
-          'order_type': orderType,
-          if (deliveryAddress != null) 'delivery_address': deliveryAddress,
-        },
-        'payment_method': paymentMethod,
-        'status': 'pending',
-        'created_at': createdAt,
+        'customer_name': customerName,
+        'customer_phone': customerPhone,
+        'items': items,
         if (deliveryAddress != null) 'delivery_address': deliveryAddress,
-      };
-
-      await _localStorage.saveOrder(
-        orderId: orderId,
-        items: items,
-        totalPrice: totalPrice,
-        orderType: orderType,
-      );
-
-      await _sharedOrders.saveOrderToShared(
-        orderId: orderId,
-        orderData: orderData,
-      );
-
-      await _guestCustomerTracking.saveGuestCustomer(
-        customerId: customerId,
-        name: customerName,
-        phone: customerPhone,
-        email: '',
-        orderType: orderType,
-        totalSpent: totalPrice,
-      );
-
-      // Increment per-item order count (for daily limit enforcement)
-      final today = DateTime.now();
-      final todayStr =
-          '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
-      for (final item in items) {
-        final menuItemId = item['menu_item_id'] as String?;
-        final qty = (item['quantity'] as int?) ?? 1;
-        if (menuItemId == null) continue;
-        try {
-          await SupabaseService.client.rpc('increment_item_order_count', params: {
-            'p_item_id': menuItemId,
-            'p_quantity': qty,
-            'p_date': todayStr,
-          });
-        } catch (_) {}
-      }
-
-      await fetchOrders();
-      return orderId;
-    } catch (e) {
-      print('Error creating order: $e');
-      rethrow;
+      },
+    );
+    final data = (res.data as Map?)?.cast<String, dynamic>() ?? {};
+    if (data['orderNumber'] == null) {
+      throw Exception(data['error']?.toString() ?? 'Could not place order');
     }
+    final orderNumber = data['orderNumber'].toString();
+
+    await _mirrorLocal(
+      orderNumber: orderNumber,
+      dbOrderId: data['dbOrderId']?.toString(),
+      lineItems: (data['items'] as List?)?.cast<Map<String, dynamic>>() ?? const [],
+      totalPrice: (data['totalPrice'] as num?)?.toDouble() ?? 0,
+      customerName: customerName,
+      customerPhone: customerPhone,
+      orderType: orderType,
+      deliveryAddress: deliveryAddress,
+      paymentMethod: 'cod',
+      paymentDetails: null,
+    );
+    await fetchOrders();
+    return orderNumber;
+  }
+
+  /// Mirror the server-created order into local storage so the confirmation
+  /// and "my orders" screens (which read locally) keep working.
+  Future<void> _mirrorLocal({
+    required String orderNumber,
+    required String? dbOrderId,
+    required List<Map<String, dynamic>> lineItems,
+    required double totalPrice,
+    required String customerName,
+    required String customerPhone,
+    required String orderType,
+    required Map<String, String>? deliveryAddress,
+    required String paymentMethod,
+    required Map<String, dynamic>? paymentDetails,
+  }) async {
+    final createdAt = DateTime.now().toIso8601String();
+    final customerId = _guestCustomerTracking.generateCustomerId();
+
+    await _localStorage.saveCustomerInfo(
+      name: customerName,
+      phone: customerPhone,
+      orderType: orderType,
+    );
+
+    final orderData = {
+      'id': orderNumber,
+      'supabase_id': dbOrderId,
+      'customer_id': customerId,
+      'items': lineItems,
+      'total_price': totalPrice,
+      'order_type': orderType,
+      'customer_info': {
+        'name': customerName,
+        'phone': customerPhone,
+        'order_type': orderType,
+        if (deliveryAddress != null) 'delivery_address': deliveryAddress,
+        if (paymentDetails != null) 'payment': paymentDetails,
+      },
+      'payment_method': paymentMethod,
+      'status': 'pending',
+      'created_at': createdAt,
+      if (deliveryAddress != null) 'delivery_address': deliveryAddress,
+    };
+
+    await _localStorage.saveOrder(
+      orderId: orderNumber,
+      items: lineItems,
+      totalPrice: totalPrice,
+      orderType: orderType,
+    );
+    await _sharedOrders.saveOrderToShared(
+      orderId: orderNumber,
+      orderData: orderData,
+    );
+    await _guestCustomerTracking.saveGuestCustomer(
+      customerId: customerId,
+      name: customerName,
+      phone: customerPhone,
+      email: '',
+      orderType: orderType,
+      totalSpent: totalPrice,
+    );
   }
 
   Future<void> fetchOrders() async {
     _isLoading = true;
     notifyListeners();
     try {
-      await _sharedOrders.init(); // ensure _prefs is initialized after hot-reload or web refresh
+      await _sharedOrders.init();
       _orders = _sharedOrders.getAllOrders();
       _orders.sort((a, b) => DateTime.parse(b['created_at'] as String)
           .compareTo(DateTime.parse(a['created_at'] as String)));
 
-      // Sync latest status from Supabase using the stored UUID
-      for (var i = 0; i < _orders.length; i++) {
-        final supabaseId = _orders[i]['supabase_id'] as String?;
-        if (supabaseId == null) continue;
+      // Sync status from the server (orders are no longer anon-readable, so we
+      // ask get-order-status for just our own order ids).
+      final ids =
+          _orders.map((o) => o['supabase_id']).whereType<String>().toList();
+      if (ids.isNotEmpty) {
         try {
-          final response = await SupabaseService.client
-              .from(SupabaseService.tableOrders)
-              .select('status')
-              .eq('id', supabaseId)
-              .maybeSingle();
-          if (response != null && response['status'] != null) {
-            _orders[i] = Map<String, dynamic>.from(_orders[i])
-              ..['status'] = response['status'];
+          final res = await SupabaseService.client.functions
+              .invoke('get-order-status', body: {'ids': ids});
+          final list = ((res.data as Map?)?['orders'] as List?) ?? const [];
+          final statusById = <String, dynamic>{
+            for (final r in list) (r as Map)['id']: r['status'],
+          };
+          for (var i = 0; i < _orders.length; i++) {
+            final sid = _orders[i]['supabase_id'];
+            if (sid != null && statusById[sid] != null) {
+              _orders[i] = Map<String, dynamic>.from(_orders[i])
+                ..['status'] = statusById[sid];
+            }
           }
-        } catch (_) {}
+        } catch (_) {/* keep local statuses */}
       }
     } catch (e) {
-      print('Error fetching orders: $e');
+      debugPrint('Error fetching orders: $e');
     }
     _isLoading = false;
     notifyListeners();
   }
 
   Future<void> updateOrderStatus(String orderId, String newStatus) async {
-    try {
-      await _sharedOrders.updateOrderStatus(orderId, newStatus);
-      await fetchOrders();
-      notifyListeners();
-    } catch (e) {
-      print('Error updating order status: $e');
-    }
+    // Customer-side status is mirrored locally; the server is the source of
+    // truth (admin updates it, and fetchOrders re-syncs from get-order-status).
+    await _sharedOrders.updateOrderStatus(orderId, newStatus);
+    await fetchOrders();
   }
 
+  /// Customer-initiated cancel. Reflects locally; a server-side `cancel-order`
+  /// edge function is still TODO to also flip the DB row (anon can't write it).
   Future<bool> cancelOrder(String orderId) async {
     try {
-      // Find the order to get its Supabase UUID
-      final order = _orders.firstWhere(
-        (o) => o['id'] == orderId,
-        orElse: () => {},
-      );
-      final supabaseId = order['supabase_id'] as String?;
-
-      // Update in Supabase if we have the UUID
-      if (supabaseId != null) {
-        try {
-          await SupabaseService.client
-              .from(SupabaseService.tableOrders)
-              .update({'status': 'cancelled'})
-              .eq('id', supabaseId);
-        } catch (e) {
-          print('⚠️ Supabase cancel failed: $e');
-        }
-      }
-
       await _sharedOrders.updateOrderStatus(orderId, 'cancelled');
       await fetchOrders();
       return true;
     } catch (e) {
-      print('Error cancelling order: $e');
+      debugPrint('Error cancelling order: $e');
       return false;
     }
   }

@@ -1,13 +1,17 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import '../models/menu_item.dart';
 import '../providers/menu_provider.dart';
 import '../providers/cart_provider.dart';
 import '../theme/bauhaus_theme.dart';
 import '../widgets/floating_cart_bar.dart';
 import 'order_tracking_page.dart';
 
+/// Digital menu — "Modern Bistro" / Epicurean Minimalist design.
 class HomePage extends StatefulWidget {
   final int initialTab;
   const HomePage({super.key, this.initialTab = 0});
@@ -18,8 +22,8 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   late int _selectedTab;
-  bool _searchOpen = false;
   final _searchCtrl = TextEditingController();
+  final _searchFocus = FocusNode();
 
   @override
   void initState() {
@@ -33,124 +37,41 @@ class _HomePageState extends State<HomePage> {
   @override
   void dispose() {
     _searchCtrl.dispose();
+    _searchFocus.dispose();
     super.dispose();
   }
-
-  void _toggleSearch() {
-    setState(() {
-      _searchOpen = !_searchOpen;
-      if (!_searchOpen) {
-        _searchCtrl.clear();
-        context.read<MenuProvider>().setSearchQuery('');
-      }
-    });
-  }
-
-  TextStyle _sg(double size, FontWeight weight, Color color,
-          {double? spacing}) =>
-      GoogleFonts.spaceGrotesk(
-          fontSize: size,
-          fontWeight: weight,
-          color: color,
-          letterSpacing: spacing);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: BauhausTheme.white,
+      backgroundColor: BauhausTheme.background,
       appBar: AppBar(
-        backgroundColor: BauhausTheme.white,
+        backgroundColor: BauhausTheme.background,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
-        centerTitle: true,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(3),
-          child: Container(height: 3, color: BauhausTheme.primaryBlack),
-        ),
+        titleSpacing: 20,
         title: Row(
-          mainAxisSize: MainAxisSize.min,
           children: [
-            Text('PROTI',
-                style: GoogleFonts.spaceGrotesk(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  color: BauhausTheme.primaryBlack,
-                  letterSpacing: 1.5,
-                )),
-            const SizedBox(width: 6),
-            Image.asset('assets/images/logo.png',
-                height: 32, width: 32, fit: BoxFit.contain),
-            const SizedBox(width: 6),
-            Text('BOWL',
-                style: GoogleFonts.spaceGrotesk(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  color: BauhausTheme.accentRed,
-                  letterSpacing: 1.5,
-                )),
+            const Icon(Icons.restaurant, color: BauhausTheme.surfaceBlack, size: 22),
+            const SizedBox(width: 8),
+            Text(
+              'Proti Bowl',
+              style: GoogleFonts.playfairDisplay(
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+                color: BauhausTheme.surfaceBlack,
+                letterSpacing: -0.3,
+              ),
+            ),
           ],
         ),
-        actions: [
-          IconButton(
-            icon: Icon(
-              _searchOpen ? Icons.close : Icons.search,
-              color: BauhausTheme.primaryBlack,
-              size: 24,
-            ),
-            onPressed: _toggleSearch,
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-            child: Consumer<CartProvider>(
-              builder: (context, cart, _) {
-                return Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: () => context.go('/order'),
-                        child: const Padding(
-                          padding: EdgeInsets.all(8),
-                          child: Icon(Icons.shopping_cart_outlined,
-                              color: BauhausTheme.primaryBlack, size: 26),
-                        ),
-                      ),
-                    ),
-                    if (cart.items.isNotEmpty)
-                      Positioned(
-                        top: 0,
-                        right: 0,
-                        child: Container(
-                          width: 16,
-                          height: 16,
-                          color: BauhausTheme.accentRed,
-                          alignment: Alignment.center,
-                          child: Text('${cart.itemCount}',
-                              style: GoogleFonts.spaceGrotesk(
-                                color: BauhausTheme.white,
-                                fontSize: 9,
-                                fontWeight: FontWeight.w800,
-                              )),
-                        ),
-                      ),
-                  ],
-                );
-              },
-            ),
-          ),
-        ],
       ),
       body: Stack(
         children: [
-          // ── GRID BACKGROUND ──────────────────────────────────────
-          CustomPaint(
-            painter: _GridPainter(),
-            child: const SizedBox.expand(),
-          ),
           _selectedTab == 0
               ? _buildMenuTab(context)
-              : _buildOrdersTab(context),
+              : const OrderTrackingPage(),
           Consumer<CartProvider>(
             builder: (context, cart, _) => Positioned(
               bottom: 0,
@@ -162,25 +83,11 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          border: Border(
-              top: BorderSide(color: BauhausTheme.primaryBlack, width: 2)),
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _selectedTab,
-          onTap: (i) => setState(() => _selectedTab = i),
-          items: const [
-            BottomNavigationBarItem(
-                icon: Icon(Icons.grid_view_rounded), label: 'MENU'),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.receipt_long_outlined), label: 'ORDERS'),
-          ],
-        ),
-      ),
+      bottomNavigationBar: _buildBottomNav(),
     );
   }
 
+  // ── MENU TAB ─────────────────────────────────────────────────────────────
   Widget _buildMenuTab(BuildContext context) {
     return Consumer<MenuProvider>(
       builder: (context, menu, _) {
@@ -188,513 +95,605 @@ class _HomePageState extends State<HomePage> {
           return const Center(child: CircularProgressIndicator());
         }
 
-        return Column(
-          children: [
-            // ── SEARCH BAR ─────────────────────────────────────────
-            if (_searchOpen)
-              Container(
-                color: BauhausTheme.white,
-                padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
-                child: TextField(
-                  controller: _searchCtrl,
-                  autofocus: true,
-                  style:
-                      _sg(14, FontWeight.w500, BauhausTheme.primaryBlack),
-                  decoration: InputDecoration(
-                    hintText: 'SEARCH ITEMS...',
-                    hintStyle:
-                        _sg(13, FontWeight.w500, BauhausTheme.mediumGrey),
-                    prefixIcon: const Icon(Icons.search,
-                        color: BauhausTheme.primaryBlack, size: 20),
-                    suffixIcon: _searchCtrl.text.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear,
-                                color: BauhausTheme.primaryBlack),
-                            onPressed: () {
-                              _searchCtrl.clear();
-                              menu.setSearchQuery('');
-                            },
-                          )
-                        : null,
-                    border: const OutlineInputBorder(
-                      borderRadius: BorderRadius.zero,
-                      borderSide: BorderSide(
-                          color: BauhausTheme.primaryBlack, width: 2),
-                    ),
-                    enabledBorder: const OutlineInputBorder(
-                      borderRadius: BorderRadius.zero,
-                      borderSide: BorderSide(
-                          color: BauhausTheme.primaryBlack, width: 2),
-                    ),
-                    focusedBorder: const OutlineInputBorder(
-                      borderRadius: BorderRadius.zero,
-                      borderSide:
-                          BorderSide(color: BauhausTheme.accentRed, width: 2),
-                    ),
-                    contentPadding:
-                        const EdgeInsets.symmetric(vertical: 10),
-                    filled: false,
-                  ),
-                  onChanged: (v) {
-                    menu.setSearchQuery(v);
-                    setState(() {});
-                  },
-                ),
-              ),
+        final searching = _searchCtrl.text.isNotEmpty;
+        final featured = _featuredItem(menu);
 
-            // ── CATEGORY FILTER ────────────────────────────────────
-            Container(
-              decoration: const BoxDecoration(
-                color: BauhausTheme.lightGrey,
-                border: Border(
-                  bottom:
-                      BorderSide(color: BauhausTheme.primaryBlack, width: 2),
-                ),
-              ),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 10),
-                child: Row(
-                  children: menu.categories.map((cat) {
-                    final selected = menu.selectedCategory == cat;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: GestureDetector(
-                        onTap: () => menu.selectCategory(cat),
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 180),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: selected
-                                ? BauhausTheme.primaryBlack
-                                : BauhausTheme.white,
-                            border: Border.all(
-                                color: BauhausTheme.primaryBlack, width: 2),
-                          ),
-                          child: Text(
-                            cat.toUpperCase(),
-                            style: _sg(
-                              11,
-                              FontWeight.w700,
-                              selected
-                                  ? BauhausTheme.white
-                                  : BauhausTheme.primaryBlack,
-                              spacing: 0.5,
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-            ),
+        return RefreshIndicator(
+          onRefresh: () => menu.fetchAll(),
+          color: BauhausTheme.accentRed,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final w = constraints.maxWidth;
+              return ListView(
+                padding: const EdgeInsets.only(bottom: 120),
+                children: [
+                  // ── HERO ───────────────────────────────────────────
+                  if (featured != null && !searching)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                      child: _HeroCard(item: featured),
+                    ),
 
-            // ── MENU GRID ──────────────────────────────────────────
-            Expanded(
-              child: menu.filteredItems.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Container(
-                            width: 64,
-                            height: 64,
-                            color: BauhausTheme.lightGrey,
-                            child: const Icon(Icons.search_off,
-                                size: 32, color: BauhausTheme.mediumGrey),
-                          ),
-                          const SizedBox(height: 12),
-                          Text('NO ITEMS FOUND',
-                              style: _sg(14, FontWeight.w700,
-                                  BauhausTheme.mediumGrey,
-                                  spacing: 1)),
-                        ],
-                      ),
-                    )
-                  : LayoutBuilder(
-                      builder: (context, constraints) {
-                        final w = constraints.maxWidth;
-                        final cols = w < 500 ? 1 : w < 900 ? 2 : 3;
-                        return RefreshIndicator(
-                          onRefresh: () => menu.fetchAll(),
-                          color: BauhausTheme.primaryBlack,
-                          child: GridView.builder(
-                            padding: const EdgeInsets.fromLTRB(
-                                16, 16, 16, 100),
-                            gridDelegate:
-                                SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: cols,
-                              mainAxisSpacing: 12,
-                              crossAxisSpacing: cols > 1 ? 12 : 0,
-                              mainAxisExtent: 380,
-                            ),
-                            itemCount: menu.filteredItems.length,
-                            itemBuilder: (ctx, i) =>
-                                _BauhausMenuCard(
-                                    item: menu.filteredItems[i]),
-                          ),
-                        );
+                  // ── SEARCH ─────────────────────────────────────────
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+                    child: TextField(
+                      controller: _searchCtrl,
+                      focusNode: _searchFocus,
+                      style: GoogleFonts.inter(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w400,
+                          color: BauhausTheme.primaryBlack),
+                      onChanged: (v) {
+                        menu.setSearchQuery(v);
+                        setState(() {});
                       },
+                      decoration: InputDecoration(
+                        hintText: 'Search our menu...',
+                        hintStyle: GoogleFonts.inter(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w400,
+                            color: BauhausTheme.onSurfaceVariant),
+                        prefixIcon: const Icon(Icons.search,
+                            color: BauhausTheme.onSurfaceVariant, size: 22),
+                        suffixIcon: searching
+                            ? IconButton(
+                                icon: const Icon(Icons.clear,
+                                    color: BauhausTheme.onSurfaceVariant,
+                                    size: 20),
+                                onPressed: () {
+                                  _searchCtrl.clear();
+                                  menu.setSearchQuery('');
+                                  setState(() {});
+                                },
+                              )
+                            : null,
+                        filled: true,
+                        fillColor: BauhausTheme.lightGrey,
+                        border: OutlineInputBorder(
+                          borderRadius:
+                              BorderRadius.circular(BauhausTheme.radiusMd),
+                          borderSide: BorderSide.none,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius:
+                              BorderRadius.circular(BauhausTheme.radiusMd),
+                          borderSide: BorderSide.none,
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius:
+                              BorderRadius.circular(BauhausTheme.radiusMd),
+                          borderSide: const BorderSide(
+                              color: BauhausTheme.accentRed, width: 1.5),
+                        ),
+                        contentPadding:
+                            const EdgeInsets.symmetric(vertical: 14),
+                      ),
                     ),
-            ),
-          ],
+                  ),
+
+                  // ── CATEGORY PILLS ─────────────────────────────────
+                  SizedBox(
+                    height: 56,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 8),
+                      children: [
+                        for (final cat in menu.categories)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: _categoryPill(
+                              cat,
+                              menu.selectedCategory == cat,
+                              () => menu.selectCategory(cat),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // ── SECTIONS ───────────────────────────────────────
+                  if (menu.filteredItems.isEmpty)
+                    _emptyState()
+                  else
+                    ..._buildSections(menu, w),
+                ],
+              );
+            },
+          ),
         );
       },
     );
   }
 
-  Widget _buildOrdersTab(BuildContext context) => const OrderTrackingPage();
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Grid background painter
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _GridPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0xFFD8D8D8)
-      ..strokeWidth = 0.8;
-
-    const step = 28.0;
-
-    for (double x = 0; x <= size.width; x += step) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+  MenuItem? _featuredItem(MenuProvider menu) {
+    // Only show the hero when the admin has explicitly starred an item as the
+    // Featured Creation. If none is featured, returns null and the hero hides.
+    for (final i in menu.items) {
+      if (i.featured) return i;
     }
-    for (double y = 0; y <= size.height; y += step) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
+    return null;
   }
 
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  List<Widget> _buildSections(MenuProvider menu, double width) {
+    // Group filtered items by category, preserving the provider's order.
+    final items = menu.filteredItems;
+    final order = menu.categories.where((c) => c != 'All').toList();
+    final grouped = <String, List<MenuItem>>{};
+    for (final it in items) {
+      grouped.putIfAbsent(it.category, () => []).add(it);
+    }
+    final cats = [
+      ...order.where(grouped.containsKey),
+      ...grouped.keys.where((c) => !order.contains(c)),
+    ];
+
+    final cols = width < 600 ? 1 : (width < 1000 ? 2 : 3);
+    const gutter = 16.0;
+    final cardW =
+        (width - 40 - (gutter * (cols - 1))) / cols; // 20px side padding
+
+    return [
+      for (final cat in cats) ...[
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+          child: _sectionHeader(cat),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Wrap(
+            spacing: gutter,
+            runSpacing: gutter,
+            children: [
+              for (final item in grouped[cat]!)
+                SizedBox(
+                  width: cols == 1 ? double.infinity : cardW,
+                  child: _MenuCard(item: item),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+      ],
+    ];
+  }
+
+  Widget _sectionHeader(String title) => Container(
+        width: double.infinity,
+        padding: const EdgeInsets.only(bottom: 8),
+        decoration: const BoxDecoration(
+          border: Border(
+            bottom:
+                BorderSide(color: BauhausTheme.outline, width: 1),
+          ),
+        ),
+        child: Text(
+          title,
+          style: GoogleFonts.playfairDisplay(
+            fontSize: 24,
+            fontWeight: FontWeight.w600,
+            color: BauhausTheme.primaryBlack,
+            height: 1.3,
+          ),
+        ),
+      );
+
+  Widget _categoryPill(String label, bool selected, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 22),
+        decoration: BoxDecoration(
+          color: selected
+              ? BauhausTheme.surfaceBlack // primary #0a0a0a
+              : BauhausTheme.surfaceContainer,
+          borderRadius: BorderRadius.circular(BauhausTheme.radiusPill),
+        ),
+        child: Text(
+          label,
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.3,
+            color: selected
+                ? BauhausTheme.onAccent
+                : BauhausTheme.onSurfaceVariant,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _emptyState() => Padding(
+        padding: const EdgeInsets.only(top: 80),
+        child: Column(
+          children: [
+            const Icon(Icons.search_off,
+                size: 48, color: BauhausTheme.outline),
+            const SizedBox(height: 12),
+            Text('No items found',
+                style: BauhausTheme.body(
+                    size: 15, color: BauhausTheme.mediumGrey)),
+          ],
+        ),
+      );
+
+  // ── BOTTOM NAV (Menu / Search / Orders) ────────────────────────────────────
+  Widget _buildBottomNav() {
+    return Container(
+      decoration: BoxDecoration(
+        color: BauhausTheme.white,
+        borderRadius:
+            const BorderRadius.vertical(top: Radius.circular(16)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 20,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          height: 64,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _navItem(Icons.menu_book, 'Menu',
+                  active: _selectedTab == 0,
+                  filled: true,
+                  onTap: () => setState(() => _selectedTab = 0)),
+              _navItem(Icons.search, 'Search', active: false, onTap: () {
+                setState(() => _selectedTab = 0);
+                Future.delayed(const Duration(milliseconds: 50),
+                    () => _searchFocus.requestFocus());
+              }),
+              _navItem(Icons.receipt_long, 'Orders',
+                  active: _selectedTab == 1,
+                  onTap: () => setState(() => _selectedTab = 1)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _navItem(IconData icon, String label,
+      {required bool active, bool filled = false, required VoidCallback onTap}) {
+    final color =
+        active ? BauhausTheme.accentRed : BauhausTheme.onSurfaceVariant;
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: color, size: 24),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+                color: color,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Menu Card — Bauhaus Modernist with hover effects
+// Hero — featured creation
 // ─────────────────────────────────────────────────────────────────────────────
-
-class _BauhausMenuCard extends StatefulWidget {
-  final dynamic item;
-  const _BauhausMenuCard({required this.item});
-
-  @override
-  State<_BauhausMenuCard> createState() => _BauhausMenuCardState();
-}
-
-class _BauhausMenuCardState extends State<_BauhausMenuCard> {
-  bool _cardHovered = false;
-  bool _btnHovered = false;
-
-  static const Color _yellow = Color(0xFFFFCC00);
-  static const Color _vegGreen = Color(0xFF1B7A34);
-
-  TextStyle _sg(double size, FontWeight weight, Color color,
-          {double? spacing}) =>
-      GoogleFonts.spaceGrotesk(
-          fontSize: size,
-          fontWeight: weight,
-          color: color,
-          letterSpacing: spacing);
+class _HeroCard extends StatelessWidget {
+  final MenuItem item;
+  const _HeroCard({required this.item});
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<CartProvider>(
-      builder: (context, cart, _) {
-        final cartIdx =
-            cart.items.indexWhere((i) => i.item.id == widget.item.id);
-        final qty = cartIdx > -1 ? cart.items[cartIdx].quantity : 0;
-
-        return MouseRegion(
-          cursor: SystemMouseCursors.click,
-          onEnter: (_) => setState(() => _cardHovered = true),
-          onExit: (_) => setState(() => _cardHovered = false),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: _cardHovered
-                    ? BauhausTheme.accentRed
-                    : BauhausTheme.primaryBlack,
-                width: _cardHovered ? 2.5 : 2,
-              ),
-              color: BauhausTheme.white,
-              boxShadow: _cardHovered
-                  ? [
-                      const BoxShadow(
-                        color: Color(0x22000000),
-                        blurRadius: 0,
-                        offset: Offset(4, 4),
-                      )
-                    ]
-                  : [],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // ── IMAGE with zoom on hover ─────────────────────
-                ClipRect(
-                  child: SizedBox(
-                    height: 210,
-                    width: double.infinity,
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        AnimatedScale(
-                          scale: _cardHovered ? 1.07 : 1.0,
-                          duration: const Duration(milliseconds: 300),
-                          curve: Curves.easeOut,
-                          child: widget.item.imageUrl != null
-                              ? Image.network(
-                                  widget.item.imageUrl!,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => Container(
-                                    color: BauhausTheme.patternGrey,
-                                    child: const Icon(Icons.image,
-                                        size: 56,
-                                        color: BauhausTheme.mediumGrey),
-                                  ),
-                                )
-                              : Container(
-                                  color: BauhausTheme.patternGrey,
-                                  child: const Icon(Icons.image,
-                                      size: 56,
-                                      color: BauhausTheme.mediumGrey),
-                                ),
-                        ),
-                        // Sold-out overlay
-                        if (widget.item.isSoldOut)
-                          Positioned.fill(
-                            child: Container(
-                              color: Colors.black.withValues(alpha: 0.58),
-                              alignment: Alignment.center,
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.notifications_off,
-                                      color: Colors.white, size: 34),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'SOLD OUT',
-                                    style: _sg(13, FontWeight.w800,
-                                        Colors.white,
-                                        spacing: 2),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        // Price block — bottom left (yellow)
-                        Positioned(
-                          bottom: 0,
-                          left: 0,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 6),
-                            color: _yellow,
-                            child: Text(
-                              '₹${widget.item.price.toStringAsFixed(0)}',
-                              style: _sg(15, FontWeight.w800,
-                                  BauhausTheme.primaryBlack),
-                            ),
-                          ),
-                        ),
-                        // Veg indicator — top right
-                        if (widget.item.badge != null &&
-                            widget.item.badge!.isNotEmpty)
-                          Positioned(
-                            top: 10,
-                            right: 10,
-                            child: Container(
-                              width: 22,
-                              height: 22,
-                              decoration: BoxDecoration(
-                                border: Border.all(
-                                    color: _vegGreen, width: 2),
-                              ),
-                              alignment: Alignment.center,
-                              child: Container(
-                                width: 10,
-                                height: 10,
-                                decoration: const BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: _vegGreen,
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
+    return GestureDetector(
+      onTap: () => context.push('/product/${item.id}'),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: SizedBox(
+          height: 280,
+          width: double.infinity,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              if (item.imageUrl != null)
+                CachedNetworkImage(
+                  imageUrl: item.imageUrl!,
+                  fit: BoxFit.cover,
+                  placeholder: (_, __) =>
+                      Container(color: BauhausTheme.lightGrey),
+                  errorWidget: (_, __, ___) => Container(
+                    color: BauhausTheme.lightGrey,
+                    child: const Icon(Icons.restaurant_menu,
+                        color: BauhausTheme.mediumGrey, size: 48),
+                  ),
+                )
+              else
+                Container(color: BauhausTheme.surfaceContainerHigh),
+              // gradient
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [
+                      Colors.black.withOpacity(0.6),
+                      Colors.transparent,
+                    ],
                   ),
                 ),
+              ),
+              Positioned(
+                left: 20,
+                right: 20,
+                bottom: 20,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'FEATURED CREATION',
+                      style: GoogleFonts.inter(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                        letterSpacing: 2.5,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      item.name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.playfairDisplay(
+                        fontSize: 30,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                        height: 1.1,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 
-                Container(height: 2, color: BauhausTheme.primaryBlack),
+// ─────────────────────────────────────────────────────────────────────────────
+// Menu card — exact Epicurean card
+// ─────────────────────────────────────────────────────────────────────────────
+class _MenuCard extends StatefulWidget {
+  final MenuItem item;
+  const _MenuCard({required this.item});
 
-                // ── PRODUCT INFO ──────────────────────────────────
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              widget.item.name.toUpperCase(),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: _sg(14, FontWeight.w800,
-                                  BauhausTheme.primaryBlack,
-                                  spacing: 0.3),
-                            ),
-                            if (widget.item.description.isNotEmpty) ...[
-                              const SizedBox(height: 4),
-                              Text(
-                                widget.item.description,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: _sg(12, FontWeight.w400,
-                                        BauhausTheme.mediumGrey)
-                                    .copyWith(height: 1.4),
-                              ),
-                            ],
-                            const SizedBox(height: 6),
-                            GestureDetector(
-                              onTap: () => context
-                                  .push('/product/${widget.item.id}'),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text(
-                                    'DETAILS',
-                                    style: _sg(10, FontWeight.w700,
-                                            BauhausTheme.accentRed,
-                                            spacing: 0.8)
-                                        .copyWith(
-                                            decoration:
-                                                TextDecoration.underline,
-                                            decorationColor:
-                                                BauhausTheme.accentRed),
-                                  ),
-                                  const SizedBox(width: 2),
-                                  const Icon(Icons.chevron_right,
-                                      size: 13,
-                                      color: BauhausTheme.accentRed),
-                                ],
-                              ),
-                            ),
-                          ],
+  @override
+  State<_MenuCard> createState() => _MenuCardState();
+}
+
+class _MenuCardState extends State<_MenuCard> {
+  bool _added = false;
+  Timer? _timer;
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _onAdd(CartProvider cart) {
+    cart.addItem(widget.item);
+    setState(() => _added = true);
+    _timer?.cancel();
+    _timer = Timer(const Duration(milliseconds: 1600), () {
+      if (mounted) setState(() => _added = false);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final item = widget.item;
+    return Container(
+      decoration: BoxDecoration(
+        color: BauhausTheme.white,
+        borderRadius: BorderRadius.circular(BauhausTheme.radiusMd),
+        boxShadow: BauhausTheme.cardShadow,
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Image
+          GestureDetector(
+            onTap: () => context.push('/product/${item.id}'),
+            child: AspectRatio(
+              aspectRatio: 3 / 2,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (item.imageUrl != null)
+                    CachedNetworkImage(
+                      imageUrl: item.imageUrl!,
+                      fit: BoxFit.cover,
+                      placeholder: (_, __) =>
+                          Container(color: BauhausTheme.lightGrey),
+                      errorWidget: (_, __, ___) => Container(
+                        color: BauhausTheme.lightGrey,
+                        child: const Icon(Icons.restaurant_menu,
+                            color: BauhausTheme.mediumGrey),
+                      ),
+                    )
+                  else
+                    Container(
+                      color: BauhausTheme.lightGrey,
+                      child: const Icon(Icons.restaurant_menu,
+                          color: BauhausTheme.mediumGrey),
+                    ),
+                  if (item.isSoldOut)
+                    Container(
+                      color: Colors.black.withOpacity(0.5),
+                      alignment: Alignment.center,
+                      child: Text('SOLD OUT',
+                          style: GoogleFonts.inter(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 2)),
+                    ),
+                ],
+              ),
+            ),
+          ),
+
+          // Content
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => context.push('/product/${item.id}'),
+                        child: Text(
+                          item.name,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.playfairDisplay(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: BauhausTheme.primaryBlack,
+                            height: 1.2,
+                          ),
                         ),
-
-                        // ── CART CONTROL ──────────────────────────
-                        widget.item.isSoldOut
-                            ? Container(
-                                width: double.infinity,
-                                height: 42,
-                                color: Colors.grey.shade400,
-                                alignment: Alignment.center,
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.center,
-                                  children: [
-                                    const Icon(Icons.notifications_off,
-                                        color: Colors.white, size: 15),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      'NOT AVAILABLE',
-                                      style: _sg(11, FontWeight.w800,
-                                          Colors.white,
-                                          spacing: 0.8),
-                                    ),
-                                  ],
-                                ),
-                              )
-                            : qty == 0
-                            ? MouseRegion(
-                                cursor: SystemMouseCursors.click,
-                                onEnter: (_) =>
-                                    setState(() => _btnHovered = true),
-                                onExit: (_) =>
-                                    setState(() => _btnHovered = false),
-                                child: GestureDetector(
-                                  onTap: () => cart.addItem(widget.item),
-                                  child: AnimatedContainer(
-                                    duration:
-                                        const Duration(milliseconds: 180),
-                                    width: double.infinity,
-                                    height: 42,
-                                    color: _btnHovered
-                                        ? BauhausTheme.accentRed
-                                        : BauhausTheme.primaryBlack,
-                                    alignment: Alignment.center,
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Icon(
-                                          _btnHovered
-                                              ? Icons.add_shopping_cart
-                                              : Icons.shopping_cart_outlined,
-                                          color: BauhausTheme.white,
-                                          size: 15,
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          'ADD TO CART',
-                                          style: _sg(12, FontWeight.w800,
-                                              BauhausTheme.white,
-                                              spacing: 0.8),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              )
-                            : Container(
-                                height: 42,
-                                color: BauhausTheme.primaryBlack,
-                                child: Row(
-                                  children: [
-                                    GestureDetector(
-                                      onTap: () => cart.updateQuantity(
-                                          widget.item.id, qty - 1),
-                                      child: const SizedBox(
-                                        width: 42,
-                                        height: 42,
-                                        child: Icon(Icons.remove,
-                                            color: BauhausTheme.white,
-                                            size: 18),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: Text('$qty',
-                                          textAlign: TextAlign.center,
-                                          style: _sg(16, FontWeight.w800,
-                                              BauhausTheme.white)),
-                                    ),
-                                    GestureDetector(
-                                      onTap: () =>
-                                          cart.addItem(widget.item),
-                                      child: const SizedBox(
-                                        width: 42,
-                                        height: 42,
-                                        child: Icon(Icons.add,
-                                            color: BauhausTheme.white,
-                                            size: 18),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                      ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      '₹${item.price.toStringAsFixed(0)}',
+                      style: GoogleFonts.inter(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w500,
+                        color: BauhausTheme.accentRed,
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                  ],
+                ),
+                if (item.description.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    item.description,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                      color: BauhausTheme.onSurfaceVariant,
+                      height: 1.5,
                     ),
                   ),
+                ],
+                if (item.tags.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final tag in item.tags.take(3)) _dietTag(tag),
+                    ],
+                  ),
+                ],
+                const SizedBox(height: 16),
+                _addButton(),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _dietTag(String tag) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: BauhausTheme.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Text(
+          tag.toUpperCase(),
+          style: GoogleFonts.inter(
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            color: BauhausTheme.onSurfaceVariant,
+            letterSpacing: 0.4,
+          ),
+        ),
+      );
+
+  Widget _addButton() {
+    return Consumer<CartProvider>(
+      builder: (context, cart, _) {
+        if (widget.item.isSoldOut) {
+          return SizedBox(
+            width: double.infinity,
+            height: 46,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: BauhausTheme.surfaceContainerHigh,
+                borderRadius: BorderRadius.circular(BauhausTheme.radiusSm),
+              ),
+              child: Center(
+                child: Text('Sold Out',
+                    style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: BauhausTheme.mediumGrey)),
+              ),
+            ),
+          );
+        }
+        return SizedBox(
+          width: double.infinity,
+          height: 46,
+          child: ElevatedButton(
+            onPressed: () => _onAdd(cart),
+            style: ElevatedButton.styleFrom(
+              backgroundColor:
+                  _added ? const Color(0xFF474746) : BauhausTheme.accentRed,
+              foregroundColor: BauhausTheme.onAccent,
+              elevation: 0,
+              shadowColor: Colors.transparent,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(BauhausTheme.radiusSm),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(_added ? Icons.check : Icons.add_shopping_cart,
+                    size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  _added ? 'Added' : 'Add to Cart',
+                  style: GoogleFonts.inter(
+                      fontSize: 14, fontWeight: FontWeight.w600),
                 ),
               ],
             ),

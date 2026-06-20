@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../theme/bauhaus_theme.dart';
 
+/// Labelled value block — used for order meta (table, totals, etc.).
 class BauhausInfoBox extends StatelessWidget {
   final String label;
   final String value;
@@ -18,32 +19,29 @@ class BauhausInfoBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        border: Border.all(color: BauhausTheme.primaryBlack, width: 1),
-        color: isStriped ? BauhausTheme.patternGrey : BauhausTheme.white,
+        color: isStriped ? BauhausTheme.lightGrey : BauhausTheme.white,
+        borderRadius: BorderRadius.circular(BauhausTheme.radiusSm),
+        border: Border.all(color: BauhausTheme.patternGrey, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             label.toUpperCase(),
-            style: const TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
+            style: BauhausTheme.body(
+              size: 10,
+              weight: FontWeight.w700,
               color: BauhausTheme.mediumGrey,
-              letterSpacing: 0.5,
+              spacing: 0.6,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             value,
             style: valueStyle ??
-                const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: BauhausTheme.primaryBlack,
-                ),
+                BauhausTheme.heading(size: 16, weight: FontWeight.w600),
           ),
         ],
       ),
@@ -51,18 +49,19 @@ class BauhausInfoBox extends StatelessWidget {
   }
 }
 
+/// Small pill tag — dietary labels, status badges.
 class BauhausBadge extends StatelessWidget {
   final String label;
-  final Color backgroundColor;
-  final Color textColor;
+  final Color? backgroundColor;
+  final Color? textColor;
   final EdgeInsets padding;
 
   const BauhausBadge({
     Key? key,
     required this.label,
-    this.backgroundColor = BauhausTheme.accentRed,
-    this.textColor = BauhausTheme.white,
-    this.padding = const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+    this.backgroundColor,
+    this.textColor,
+    this.padding = const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
   }) : super(key: key);
 
   @override
@@ -70,16 +69,16 @@ class BauhausBadge extends StatelessWidget {
     return Container(
       padding: padding,
       decoration: BoxDecoration(
-        color: backgroundColor,
-        border: Border.all(color: BauhausTheme.primaryBlack, width: 1),
+        color: backgroundColor ?? BauhausTheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(BauhausTheme.radiusPill),
       ),
       child: Text(
         label.toUpperCase(),
-        style: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w700,
-          color: textColor,
-          letterSpacing: 0.5,
+        style: BauhausTheme.body(
+          size: 10,
+          weight: FontWeight.w700,
+          color: textColor ?? BauhausTheme.mediumGrey,
+          spacing: 0.6,
         ),
       ),
     );

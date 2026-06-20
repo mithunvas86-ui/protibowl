@@ -1,172 +1,315 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+/// Epicurean Minimalist — "Modern Bistro" design system.
+///
+/// Sophisticated, clean and appetizing: a soft off-white "menu paper" base,
+/// rich charcoal text, and a warm terracotta accent reserved for actions and
+/// prices. Editorial serif (Playfair Display) for dish names / headlines,
+/// Inter for everything functional. Rounded shapes, soft ambient shadows.
+///
+/// NOTE: the class keeps the historical name `BauhausTheme` so the existing
+/// ~250 call sites keep working; the colour roles below have been remapped to
+/// the new palette.
 class BauhausTheme {
-  // Colors - Neo-Brutalist Palette
-  static const Color primaryBlack = Color(0xFF000000);
-  static const Color surfaceBlack = Color(0xFF1A1A1A);
+  // ── Core palette (semantic roles; legacy names preserved) ──────────────────
+  /// Rich charcoal — primary text, headings, dark UI elements.
+  static const Color primaryBlack = Color(0xFF1B1C1C);
+
+  /// Near-black — highest-contrast surfaces (e.g. floating cart bar).
+  static const Color surfaceBlack = Color(0xFF0A0A0A);
+
+  /// Pure white — card surfaces and text/icons on the accent.
   static const Color white = Color(0xFFFFFFFF);
-  static const Color lightGrey = Color(0xFFF5F5F5);
-  static const Color mediumGrey = Color(0xFF808080);
-  static const Color accentRed = Color(0xFFE63946);
-  static const Color patternGrey = Color(0xFFE8E8E8);
+
+  /// Soft off-white — the app background ("menu paper").
+  static const Color background = Color(0xFFFBF9F9);
+
+  /// Subtle filled areas — search field, image placeholders, low containers.
+  static const Color lightGrey = Color(0xFFF5F3F3);
+
+  /// Neutral container — chips / pills (e.g. "Table 12").
+  static const Color surfaceContainer = Color(0xFFEFEDED);
+
+  /// Slightly stronger neutral container — dietary tag chips.
+  static const Color surfaceContainerHigh = Color(0xFFE9E8E7);
+
+  /// Secondary text — descriptions, captions, inactive nav.
+  static const Color mediumGrey = Color(0xFF707070);
+
+  /// On-surface variant (design token) — descriptions, idle nav, chips.
+  static const Color onSurfaceVariant = Color(0xFF444748);
+
+  /// Terracotta accent — call-to-action buttons, prices, highlights.
+  static const Color accentRed = Color(0xFF9F402D);
+
+  /// Soft terracotta — accent badges / subtle accent fills.
+  static const Color accentSoft = Color(0xFFFD876F);
+
+  /// Hairline dividers between list items.
+  static const Color patternGrey = Color(0xFFEDEDED);
+
+  /// Borders / outlines.
+  static const Color outline = Color(0xFFC4C7C7);
+
+  /// Text/icon colour that always reads on top of [accentRed].
+  static const Color onAccent = Color(0xFFFFFFFF);
+
+  static const Color error = Color(0xFFBA1A1A);
+
+  // ── Shape & elevation tokens ───────────────────────────────────────────────
+  static const double radiusSm = 8;
+  static const double radiusMd = 12;
+  static const double radiusLg = 16;
+  static const double radiusPill = 999;
+
+  /// Soft ambient shadow for resting cards ("paper on table").
+  static List<BoxShadow> get cardShadow => [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.04),
+          blurRadius: 20,
+          offset: const Offset(0, 4),
+        ),
+      ];
+
+  /// Stronger shadow for floating / high-priority surfaces.
+  static List<BoxShadow> get floatingShadow => [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.08),
+          blurRadius: 30,
+          offset: const Offset(0, 10),
+        ),
+      ];
+
+  // ── Typography helpers ─────────────────────────────────────────────────────
+  /// Editorial serif — dish names, section titles, hero headlines.
+  static TextStyle heading(
+          {double size = 24, FontWeight weight = FontWeight.w600, Color? color}) =>
+      GoogleFonts.playfairDisplay(
+        fontSize: size,
+        fontWeight: weight,
+        color: color ?? primaryBlack,
+        height: 1.2,
+      );
+
+  /// Functional sans — body, labels, prices.
+  static TextStyle body(
+          {double size = 16,
+          FontWeight weight = FontWeight.w400,
+          Color? color,
+          double? spacing,
+          double? height}) =>
+      GoogleFonts.inter(
+        fontSize: size,
+        fontWeight: weight,
+        color: color ?? primaryBlack,
+        letterSpacing: spacing,
+        height: height,
+      );
 
   static ThemeData get theme {
-    return ThemeData(
-      useMaterial3: false,
-      brightness: Brightness.light,
-      primaryColor: primaryBlack,
-      scaffoldBackgroundColor: white,
-      appBarTheme: AppBarTheme(
-        backgroundColor: white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: primaryBlack),
-        titleTextStyle: GoogleFonts.chivo(
-          fontSize: 28,
-          fontWeight: FontWeight.w700,
-          color: primaryBlack,
-        ),
+    final base = ThemeData(useMaterial3: true, brightness: Brightness.light);
+    return base.copyWith(
+      scaffoldBackgroundColor: background,
+      canvasColor: background,
+      primaryColor: accentRed,
+      colorScheme: const ColorScheme.light(
+        primary: accentRed,
+        onPrimary: onAccent,
+        secondary: accentRed,
+        onSecondary: onAccent,
+        surface: white,
+        onSurface: primaryBlack,
+        surfaceContainerHighest: surfaceContainerHigh,
+        outline: outline,
+        error: error,
+        onError: Colors.white,
       ),
-      textTheme: TextTheme(
-        headlineLarge: GoogleFonts.chivo(
-          fontSize: 28,
+      textTheme: _textTheme(base.textTheme),
+      iconTheme: const IconThemeData(color: primaryBlack),
+      appBarTheme: AppBarTheme(
+        backgroundColor: background,
+        surfaceTintColor: Colors.transparent,
+        foregroundColor: primaryBlack,
+        elevation: 0,
+        centerTitle: false,
+        iconTheme: const IconThemeData(color: primaryBlack),
+        titleTextStyle: GoogleFonts.playfairDisplay(
+          fontSize: 22,
           fontWeight: FontWeight.w700,
           color: primaryBlack,
-          height: 1.2,
-        ),
-        headlineMedium: GoogleFonts.chivo(
-          fontSize: 20,
-          fontWeight: FontWeight.w700,
-          color: primaryBlack,
-          height: 1.2,
-        ),
-        headlineSmall: GoogleFonts.chivo(
-          fontSize: 16,
-          fontWeight: FontWeight.w700,
-          color: primaryBlack,
-        ),
-        titleLarge: GoogleFonts.chivo(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          color: primaryBlack,
-        ),
-        bodyLarge: GoogleFonts.chivo(
-          fontSize: 16,
-          fontWeight: FontWeight.w500,
-          color: primaryBlack,
-        ),
-        bodyMedium: GoogleFonts.chivo(
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-          color: primaryBlack,
-        ),
-        bodySmall: GoogleFonts.chivo(
-          fontSize: 12,
-          fontWeight: FontWeight.w400,
-          color: mediumGrey,
-        ),
-        labelLarge: GoogleFonts.chivo(
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
-          color: primaryBlack,
-          letterSpacing: 0.5,
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: primaryBlack,
-          foregroundColor: white,
+          backgroundColor: accentRed,
+          foregroundColor: onAccent,
           elevation: 0,
+          shadowColor: Colors.transparent,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.zero,
-            side: const BorderSide(color: primaryBlack, width: 2),
+            borderRadius: BorderRadius.circular(radiusMd),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          textStyle: GoogleFonts.chivo(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          textStyle: GoogleFonts.inter(
             fontSize: 14,
-            fontWeight: FontWeight.w700,
-            color: white,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.3,
           ),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: primaryBlack,
-          side: const BorderSide(color: primaryBlack, width: 2),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.zero),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          textStyle: GoogleFonts.chivo(
+          side: const BorderSide(color: primaryBlack, width: 1.5),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(radiusMd),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          textStyle: GoogleFonts.inter(
             fontSize: 14,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.3,
           ),
         ),
       ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: accentRed,
+          textStyle: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
+        ),
+      ),
       inputDecorationTheme: InputDecorationTheme(
-        filled: false,
+        filled: true,
+        fillColor: lightGrey,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.zero,
-          borderSide: const BorderSide(color: primaryBlack, width: 2),
+          borderRadius: BorderRadius.circular(radiusMd),
+          borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.zero,
-          borderSide: const BorderSide(color: primaryBlack, width: 2),
+          borderRadius: BorderRadius.circular(radiusMd),
+          borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.zero,
-          borderSide: const BorderSide(color: accentRed, width: 2),
+          borderRadius: BorderRadius.circular(radiusMd),
+          borderSide: const BorderSide(color: accentRed, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.zero,
-          borderSide: const BorderSide(color: accentRed, width: 2),
+          borderRadius: BorderRadius.circular(radiusMd),
+          borderSide: const BorderSide(color: error, width: 1.5),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.zero,
-          borderSide: const BorderSide(color: accentRed, width: 2),
+          borderRadius: BorderRadius.circular(radiusMd),
+          borderSide: const BorderSide(color: error, width: 1.5),
         ),
-        labelStyle: GoogleFonts.chivo(
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
-          color: primaryBlack,
-          letterSpacing: 0.5,
-        ),
-        hintStyle: GoogleFonts.chivo(
+        labelStyle: GoogleFonts.inter(
           fontSize: 14,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w600,
+          color: mediumGrey,
+          letterSpacing: 0.3,
+        ),
+        hintStyle: GoogleFonts.inter(
+          fontSize: 15,
+          fontWeight: FontWeight.w400,
           color: mediumGrey,
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
-      cardTheme: const CardThemeData(
+      cardTheme: CardThemeData(
         elevation: 0,
         color: white,
+        surfaceTintColor: Colors.transparent,
+        shadowColor: Colors.black.withOpacity(0.04),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.zero,
-          side: BorderSide(color: primaryBlack, width: 2),
+          borderRadius: BorderRadius.circular(radiusLg),
         ),
         margin: EdgeInsets.zero,
       ),
+      chipTheme: ChipThemeData(
+        backgroundColor: surfaceContainerHigh,
+        labelStyle: GoogleFonts.inter(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: mediumGrey,
+        ),
+        shape: const StadiumBorder(),
+        side: BorderSide.none,
+      ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: primaryBlack,
+        backgroundColor: white,
         selectedItemColor: accentRed,
-        unselectedItemColor: white,
+        unselectedItemColor: mediumGrey,
         type: BottomNavigationBarType.fixed,
         elevation: 0,
-        selectedLabelStyle: GoogleFonts.chivo(
+        selectedLabelStyle: GoogleFonts.inter(
           fontSize: 12,
-          fontWeight: FontWeight.w700,
-          color: accentRed,
+          fontWeight: FontWeight.w600,
         ),
-        unselectedLabelStyle: GoogleFonts.chivo(
+        unselectedLabelStyle: GoogleFonts.inter(
           fontSize: 12,
           fontWeight: FontWeight.w500,
-          color: white,
         ),
       ),
-      dividerColor: primaryBlack,
+      dividerColor: patternGrey,
       dividerTheme: const DividerThemeData(
+        color: patternGrey,
+        thickness: 1,
+        space: 1,
+      ),
+    );
+  }
+
+  static TextTheme _textTheme(TextTheme base) {
+    final playfair = GoogleFonts.playfairDisplayTextTheme(base);
+    final inter = GoogleFonts.interTextTheme(base);
+    return base.copyWith(
+      // Editorial serif headlines
+      headlineLarge: playfair.headlineLarge?.copyWith(
+        fontSize: 32,
+        fontWeight: FontWeight.w700,
         color: primaryBlack,
-        thickness: 2,
-        space: 0,
+        height: 1.2,
+      ),
+      headlineMedium: playfair.headlineMedium?.copyWith(
+        fontSize: 24,
+        fontWeight: FontWeight.w600,
+        color: primaryBlack,
+        height: 1.3,
+      ),
+      headlineSmall: playfair.headlineSmall?.copyWith(
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+        color: primaryBlack,
+      ),
+      titleLarge: inter.titleLarge?.copyWith(
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        color: primaryBlack,
+      ),
+      // Functional sans body
+      bodyLarge: inter.bodyLarge?.copyWith(
+        fontSize: 18,
+        fontWeight: FontWeight.w400,
+        color: primaryBlack,
+        height: 1.6,
+      ),
+      bodyMedium: inter.bodyMedium?.copyWith(
+        fontSize: 16,
+        fontWeight: FontWeight.w400,
+        color: primaryBlack,
+        height: 1.5,
+      ),
+      bodySmall: inter.bodySmall?.copyWith(
+        fontSize: 14,
+        fontWeight: FontWeight.w400,
+        color: mediumGrey,
+        height: 1.5,
+      ),
+      labelLarge: inter.labelLarge?.copyWith(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: primaryBlack,
+        letterSpacing: 0.7,
       ),
     );
   }

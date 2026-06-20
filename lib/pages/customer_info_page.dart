@@ -38,14 +38,10 @@ class _CustomerInfoPageState extends State<CustomerInfoPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'WELCOME TO M·PROTI',
-          style: GoogleFonts.chivo(
-            fontSize: 20,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 0.5,
-          ),
+          'Welcome',
+          style: BauhausTheme.heading(size: 22, weight: FontWeight.w700),
         ),
-        backgroundColor: BauhausTheme.white,
+        backgroundColor: BauhausTheme.background,
         elevation: 0,
       ),
       body: SingleChildScrollView(
@@ -56,18 +52,13 @@ class _CustomerInfoPageState extends State<CustomerInfoPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'YOUR DETAILS',
-                style: GoogleFonts.chivo(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: BauhausTheme.primaryBlack,
-                  letterSpacing: 0.5,
-                ),
+                'Your Details',
+                style: BauhausTheme.heading(size: 26, weight: FontWeight.w700),
               ),
               const SizedBox(height: 8),
               Text(
                 'Auto-deleted after 24 hours',
-                style: GoogleFonts.chivo(
+                style: GoogleFonts.inter(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
                   color: BauhausTheme.mediumGrey,
@@ -199,7 +190,8 @@ class _CustomerInfoPageState extends State<CustomerInfoPage> {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: provider.isLoading
                                 ? BauhausTheme.mediumGrey
-                                : BauhausTheme.primaryBlack,
+                                : BauhausTheme.accentRed,
+                            foregroundColor: BauhausTheme.onAccent,
                           ),
                           child: provider.isLoading
                               ? const SizedBox(
@@ -214,7 +206,7 @@ class _CustomerInfoPageState extends State<CustomerInfoPage> {
                                 )
                               : Text(
                                   'CONTINUE',
-                                  style: GoogleFonts.chivo(
+                                  style: GoogleFonts.inter(
                                     fontWeight: FontWeight.w700,
                                   ),
                                 ),
@@ -229,12 +221,12 @@ class _CustomerInfoPageState extends State<CustomerInfoPage> {
                           style: OutlinedButton.styleFrom(
                             side: const BorderSide(
                               color: BauhausTheme.primaryBlack,
-                              width: 2,
+                              width: 1,
                             ),
                           ),
                           child: Text(
                             'SKIP FOR NOW',
-                            style: GoogleFonts.chivo(
+                            style: GoogleFonts.inter(
                               fontWeight: FontWeight.w700,
                               color: BauhausTheme.primaryBlack,
                             ),

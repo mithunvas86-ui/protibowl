@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../theme/bauhaus_theme.dart';
 
+/// Epicurean menu card: framed food photo on a white "paper" surface with a
+/// soft ambient shadow, editorial serif dish name, terracotta price, and a
+/// pill dietary tag.
 class BauhausCard extends StatelessWidget {
   final String? imageUrl;
   final String title;
@@ -28,107 +31,103 @@ class BauhausCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          border: Border.all(color: BauhausTheme.primaryBlack, width: 2),
           color: BauhausTheme.white,
+          borderRadius: BorderRadius.circular(BauhausTheme.radiusLg),
+          boxShadow: BauhausTheme.cardShadow,
         ),
+        clipBehavior: Clip.antiAlias,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image section
             if (imageUrl != null)
-              Container(
-                height: 200,
-                width: double.infinity,
-                decoration: const BoxDecoration(
-                  border: Border(
-                    bottom:
-                        BorderSide(color: BauhausTheme.primaryBlack, width: 2),
-                  ),
-                  color: BauhausTheme.lightGrey,
-                ),
+              AspectRatio(
+                aspectRatio: 3 / 2,
                 child: CachedNetworkImage(
                   imageUrl: imageUrl!,
                   fit: BoxFit.cover,
-                  placeholder: (context, url) =>
-                      const Center(child: CircularProgressIndicator()),
-                  errorWidget: (context, url, error) =>
-                      const Icon(Icons.image_not_supported),
-                ),
-              ),
-            // Category badge (positioned over image)
-            Positioned(
-              top: 8,
-              right: 8,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: BauhausTheme.accentRed,
-                  border:
-                      Border.all(color: BauhausTheme.primaryBlack, width: 1),
-                ),
-                child: Text(
-                  category.toUpperCase(),
-                  style: const TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: BauhausTheme.white,
+                  placeholder: (context, url) => Container(
+                    color: BauhausTheme.lightGrey,
+                    child: const Center(
+                      child: SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                    ),
+                  ),
+                  errorWidget: (context, url, error) => Container(
+                    color: BauhausTheme.lightGrey,
+                    child: const Icon(Icons.restaurant_menu,
+                        color: BauhausTheme.mediumGrey),
                   ),
                 ),
               ),
-            ),
-            // Content section
             Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: BauhausTheme.primaryBlack,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: BauhausTheme.heading(
+                              size: 18, weight: FontWeight.w600),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        price,
+                        style: BauhausTheme.body(
+                          size: 20,
+                          weight: FontWeight.w500,
+                          color: BauhausTheme.accentRed,
+                          spacing: -0.2,
+                        ),
+                      ),
+                    ],
                   ),
                   if (subtitle != null) ...[
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
                     Text(
                       subtitle!,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w400,
-                        color: BauhausTheme.mediumGrey,
-                      ),
+                      style: BauhausTheme.body(
+                          size: 14,
+                          color: BauhausTheme.mediumGrey,
+                          height: 1.5),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
-                  const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: BauhausTheme.accentRed,
-                          border: Border.all(
-                              color: BauhausTheme.primaryBlack, width: 1),
-                        ),
-                        child: Text(
-                          price,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: BauhausTheme.white,
-                          ),
+                  if (category.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: BauhausTheme.surfaceContainerHigh,
+                        borderRadius:
+                            BorderRadius.circular(BauhausTheme.radiusSm),
+                      ),
+                      child: Text(
+                        category.toUpperCase(),
+                        style: BauhausTheme.body(
+                          size: 10,
+                          weight: FontWeight.w700,
+                          color: BauhausTheme.mediumGrey,
+                          spacing: 0.6,
                         ),
                       ),
-                      if (actionButton != null) actionButton!,
-                    ],
-                  ),
+                    ),
+                  ],
+                  if (actionButton != null) ...[
+                    const SizedBox(height: 16),
+                    SizedBox(width: double.infinity, child: actionButton!),
+                  ],
                 ],
               ),
             ),
