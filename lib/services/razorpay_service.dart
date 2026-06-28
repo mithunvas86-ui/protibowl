@@ -157,7 +157,9 @@ class RazorpayService {
       ..setProperty('key'.toJS, keyId.toJS)
       ..setProperty('amount'.toJS, amountPaise.toDouble().toJS)
       ..setProperty('currency'.toJS, currency.toJS)
-      ..setProperty('name'.toJS, 'M·PROTI Dining'.toJS)
+      ..setProperty('name'.toJS, 'Proti Bowls'.toJS)
+      ..setProperty('image'.toJS,
+          'https://mithunvas86-ui.github.io/protibowl/icons/Icon-512.png'.toJS)
       ..setProperty('description'.toJS, 'Order Payment'.toJS)
       ..setProperty('order_id'.toJS, orderId.toJS)
       ..setProperty('prefill'.toJS, prefill)

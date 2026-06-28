@@ -53,10 +53,10 @@ class _HomePageState extends State<HomePage> {
         titleSpacing: 20,
         title: Row(
           children: [
-            const Icon(Icons.restaurant, color: BauhausTheme.surfaceBlack, size: 22),
+            Image.asset('assets/images/logo.png', height: 32),
             const SizedBox(width: 8),
             Text(
-              'Proti Bowl',
+              'Proti Bowls',
               style: GoogleFonts.playfairDisplay(
                 fontSize: 22,
                 fontWeight: FontWeight.w700,

@@ -48,8 +48,7 @@ class NotificationService {
 
       final billContent = '''
 ═══════════════════════════
-          M·PROTI
-        DINING BILL
+        PROTI BOWLS
 ═══════════════════════════
 Order ID: #${orderId.toUpperCase()}
 Time: ${DateTime.now().toString().split('.')[0]}
