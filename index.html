@@ -44,13 +44,17 @@
          context ("webglcontextlost"). The canvas can't repaint and comes back
          black — a reload restores it cleanly.
 
-      2. The common case: the tab is simply switched and the context is NOT lost,
-         but Flutter pauses rendering while hidden and doesn't always repaint on
-         return, leaving a stale black canvas. No "webglcontextlost" fires here,
-         so the reload below never triggers. Dispatching a synthetic resize when
-         the page becomes visible forces Flutter's engine to handle a metrics
-         change and repaint the scene — without a reload, so cart/page state is
-         preserved.
+      2. The tab is simply switched and the context is NOT lost, but Flutter
+         pauses rendering while hidden and doesn't always repaint on return,
+         leaving a stale black canvas. No "webglcontextlost" fires here, so the
+         reload above never triggers.
+
+    For (2), a quick synthetic resize is dispatched first (cheap, no reload —
+    covers most short switches). If the tab was hidden long enough that a
+    resize alone wasn't enough to recover last time, fall back to a reload —
+    cart is persisted to storage, so nothing is lost. A mid-checkout address
+    form (order_form_page.dart) is NOT persisted, so this only reloads after a
+    few seconds hidden, not on every instant alt-tab.
   -->
   <script>
     // Case 1: genuine GPU context loss after long backgrounding.
@@ -58,10 +62,20 @@
       window.location.reload();
     }, true);
 
-    // Case 2: quick tab switch — nudge Flutter to repaint on return.
+    // Case 2: tab switch — nudge first, reload if it was hidden long enough
+    // that the nudge alone is unreliable.
+    var hiddenAt = null;
     document.addEventListener('visibilitychange', function () {
-      if (document.visibilityState === 'visible') {
+      if (document.visibilityState === 'hidden') {
+        hiddenAt = Date.now();
+      } else if (document.visibilityState === 'visible') {
         window.dispatchEvent(new Event('resize'));
+        // ponytail: 8s threshold is a heuristic, not measured against real
+        // devices — tune if short switches still go dark or long ones don't.
+        if (hiddenAt && Date.now() - hiddenAt > 8000) {
+          window.location.reload();
+        }
+        hiddenAt = null;
       }
     });
   </script>
