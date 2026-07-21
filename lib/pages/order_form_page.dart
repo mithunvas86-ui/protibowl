@@ -3,11 +3,14 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:latlong2/latlong.dart';
 import '../providers/cart_provider.dart';
 import '../providers/order_provider.dart';
+import '../services/service_hours_service.dart';
 import '../theme/bauhaus_theme.dart';
 import '../widgets/status_animation.dart';
 import '../widgets/bauhaus_button.dart';
+import '../widgets/location_picker.dart';
 
 class OrderFormPage extends StatefulWidget {
   const OrderFormPage({super.key});
@@ -231,6 +234,11 @@ class _OrderFormPageState extends State<OrderFormPage> {
     String? selectedOrderType;
     String selectedPayment = 'online';
 
+    // Precise delivery pin (from the map picker).
+    double? pickedLat;
+    double? pickedLng;
+    String? mapsLink;
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -241,6 +249,16 @@ class _OrderFormPageState extends State<OrderFormPage> {
           // Force online payment for delivery
           if (isDelivery && selectedPayment == 'cod') {
             selectedPayment = 'online';
+          }
+
+          // Service-hours availability per order type.
+          final hours = ServiceHoursService();
+          String subFor(String base, String type) {
+            if (hours.isAvailable(type)) return base;
+            final lbl = hours.label(type);
+            return (lbl.isEmpty || lbl == 'Currently unavailable')
+                ? 'Currently unavailable'
+                : 'Available $lbl';
           }
 
           return AlertDialog(
@@ -298,9 +316,11 @@ class _OrderFormPageState extends State<OrderFormPage> {
                           _RadioRow(
                             icon: Icons.restaurant,
                             label: 'DINE IN',
-                            sublabel: 'Eat at the restaurant',
+                            sublabel:
+                                subFor('Eat at the restaurant', 'dine_in'),
                             value: 'dine_in',
                             groupValue: selectedOrderType,
+                            disabled: !hours.isAvailable('dine_in'),
                             onChanged: (v) =>
                                 setDialog(() => selectedOrderType = v),
                           ),
@@ -310,9 +330,11 @@ class _OrderFormPageState extends State<OrderFormPage> {
                           _RadioRow(
                             icon: Icons.takeout_dining,
                             label: 'TAKEAWAY',
-                            sublabel: 'Pick up your order',
+                            sublabel:
+                                subFor('Pick up your order', 'takeaway'),
                             value: 'takeaway',
                             groupValue: selectedOrderType,
+                            disabled: !hours.isAvailable('takeaway'),
                             onChanged: (v) =>
                                 setDialog(() => selectedOrderType = v),
                           ),
@@ -322,9 +344,11 @@ class _OrderFormPageState extends State<OrderFormPage> {
                           _RadioRow(
                             icon: Icons.delivery_dining,
                             label: 'DELIVERY',
-                            sublabel: 'Delivered to your address',
+                            sublabel:
+                                subFor('Delivered to your address', 'delivery'),
                             value: 'delivery',
                             groupValue: selectedOrderType,
+                            disabled: !hours.isAvailable('delivery'),
                             onChanged: (v) =>
                                 setDialog(() => selectedOrderType = v),
                           ),
@@ -346,6 +370,37 @@ class _OrderFormPageState extends State<OrderFormPage> {
                           landmarkCtrl: landmarkCtrl,
                           cityCtrl: cityCtrl,
                           pincodeCtrl: pincodeCtrl,
+                          hasPin: pickedLat != null,
+                          onPickLocation: () async {
+                            final result = await Navigator.of(ctx)
+                                .push<LocationPickerResult>(
+                              MaterialPageRoute(
+                                fullscreenDialog: true,
+                                builder: (_) => LocationPickerPage(
+                                  initialLocation: pickedLat != null
+                                      ? LatLng(pickedLat!, pickedLng!)
+                                      : null,
+                                ),
+                              ),
+                            );
+                            if (result != null) {
+                              setDialog(() {
+                                pickedLat = result.latitude;
+                                pickedLng = result.longitude;
+                                mapsLink = result.mapsLink;
+                                if (result.addressLine.isNotEmpty &&
+                                    addressCtrl.text.trim().isEmpty) {
+                                  addressCtrl.text = result.addressLine;
+                                }
+                                if (result.city.isNotEmpty) {
+                                  cityCtrl.text = result.city;
+                                }
+                                if (result.pincode.isNotEmpty) {
+                                  pincodeCtrl.text = result.pincode;
+                                }
+                              });
+                            }
+                          },
                         ),
                       ),
                     ),
@@ -425,6 +480,14 @@ class _OrderFormPageState extends State<OrderFormPage> {
                           _snack(ctx, 'Please select an order type');
                           return;
                         }
+                        if (!ServiceHoursService()
+                            .isAvailable(selectedOrderType!)) {
+                          _snack(
+                              ctx,
+                              '${selectedOrderType!.replaceAll('_', ' ')} '
+                              'is not available right now');
+                          return;
+                        }
 
                         Map<String, String>? deliveryAddress;
                         if (isDelivery) {
@@ -445,6 +508,12 @@ class _OrderFormPageState extends State<OrderFormPage> {
                             'landmark': landmarkCtrl.text.trim(),
                             'city': cityCtrl.text.trim(),
                             'pincode': pincodeCtrl.text.trim(),
+                            // Map pin is optional — extra precision when set.
+                            if (pickedLat != null)
+                              'latitude': pickedLat!.toStringAsFixed(7),
+                            if (pickedLng != null)
+                              'longitude': pickedLng!.toStringAsFixed(7),
+                            if (mapsLink != null) 'maps_link': mapsLink!,
                           };
                         }
 
@@ -562,12 +631,16 @@ class _OrderFormPageState extends State<OrderFormPage> {
 
 class _DeliveryAddressSection extends StatelessWidget {
   final TextEditingController addressCtrl, landmarkCtrl, cityCtrl, pincodeCtrl;
+  final bool hasPin;
+  final VoidCallback onPickLocation;
 
   const _DeliveryAddressSection({
     required this.addressCtrl,
     required this.landmarkCtrl,
     required this.cityCtrl,
     required this.pincodeCtrl,
+    required this.hasPin,
+    required this.onPickLocation,
   });
 
   @override
@@ -596,6 +669,64 @@ class _DeliveryAddressSection extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 12),
+
+          // ── Pin-on-map ─────────────────────────────────────────
+          InkWell(
+            onTap: onPickLocation,
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              width: double.infinity,
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              decoration: BoxDecoration(
+                color: hasPin
+                    ? Colors.green.withValues(alpha: 0.08)
+                    : const Color(0xFF1565C0).withValues(alpha: 0.10),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: hasPin ? Colors.green : const Color(0xFF1565C0),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(hasPin ? Icons.check_circle : Icons.map_outlined,
+                      size: 20,
+                      color: hasPin ? Colors.green : const Color(0xFF1565C0)),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          hasPin
+                              ? 'Location pinned on map'
+                              : 'Pin your location on map',
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: hasPin
+                                ? Colors.green.shade800
+                                : const Color(0xFF1565C0),
+                          ),
+                        ),
+                        Text(
+                          hasPin
+                              ? 'Tap to adjust the precise spot'
+                              : 'Optional — for accurate, on-time delivery',
+                          style: GoogleFonts.inter(
+                              fontSize: 11, color: Colors.grey.shade600),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(Icons.chevron_right,
+                      size: 20, color: Colors.grey.shade500),
+                ],
+              ),
+            ),
           ),
           const SizedBox(height: 12),
           TextField(
@@ -662,6 +793,7 @@ class _RadioRow extends StatelessWidget {
   final String label, sublabel, value;
   final String? groupValue;
   final ValueChanged<String?> onChanged;
+  final bool disabled;
 
   const _RadioRow({
     required this.icon,
@@ -670,13 +802,16 @@ class _RadioRow extends StatelessWidget {
     required this.value,
     required this.groupValue,
     required this.onChanged,
+    this.disabled = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final selected = groupValue == value;
-    return GestureDetector(
-      onTap: () => onChanged(value),
+    final selected = !disabled && groupValue == value;
+    return Opacity(
+      opacity: disabled ? 0.4 : 1,
+      child: GestureDetector(
+      onTap: disabled ? null : () => onChanged(value),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 160),
         color: selected ? BauhausTheme.accentRed : Colors.transparent,
@@ -712,6 +847,7 @@ class _RadioRow extends StatelessWidget {
                   color: Colors.white, size: 18),
           ],
         ),
+      ),
       ),
     );
   }

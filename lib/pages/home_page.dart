@@ -8,7 +8,9 @@ import '../models/menu_item.dart';
 import '../providers/menu_provider.dart';
 import '../providers/cart_provider.dart';
 import '../theme/bauhaus_theme.dart';
+import '../widgets/app_bottom_nav.dart';
 import '../widgets/floating_cart_bar.dart';
+import '../widgets/promo_banner_carousel.dart';
 import 'order_tracking_page.dart';
 
 /// Digital menu — "Modern Bistro" / Epicurean Minimalist design.
@@ -83,7 +85,15 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-      bottomNavigationBar: _buildBottomNav(),
+      bottomNavigationBar: AppBottomNav(
+        active: _selectedTab == 0 ? AppTab.menu : AppTab.orders,
+        onMenu: () => setState(() => _selectedTab = 0),
+        onSearch: () {
+          setState(() => _selectedTab = 0);
+          Future.delayed(const Duration(milliseconds: 50),
+              () => _searchFocus.requestFocus());
+        },
+      ),
     );
   }
 
@@ -195,10 +205,11 @@ class _HomePageState extends State<HomePage> {
                   const SizedBox(height: 8),
 
                   // ── SECTIONS ───────────────────────────────────────
+                  // (promo banners are injected mid-list by _buildSections)
                   if (menu.filteredItems.isEmpty)
                     _emptyState()
                   else
-                    ..._buildSections(menu, w),
+                    ..._buildSections(menu, w, showBanners: !searching),
                 ],
               );
             },
@@ -217,7 +228,8 @@ class _HomePageState extends State<HomePage> {
     return null;
   }
 
-  List<Widget> _buildSections(MenuProvider menu, double width) {
+  List<Widget> _buildSections(MenuProvider menu, double width,
+      {bool showBanners = false}) {
     // Group filtered items by category, preserving the provider's order.
     final items = menu.filteredItems;
     final order = menu.categories.where((c) => c != 'All').toList();
@@ -235,11 +247,16 @@ class _HomePageState extends State<HomePage> {
     final cardW =
         (width - 40 - (gutter * (cols - 1))) / cols; // 20px side padding
 
+    // The promo banners sit MID-PAGE: after roughly half of the category
+    // sections, so the menu leads and the subscription pitch appears once
+    // the visitor is already engaged (not as a front-door ad).
+    final bannerAfter = (cats.length / 2).ceil(); // 1 cat → after it
+
     return [
-      for (final cat in cats) ...[
+      for (var i = 0; i < cats.length; i++) ...[
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
-          child: _sectionHeader(cat),
+          child: _sectionHeader(cats[i]),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -247,7 +264,7 @@ class _HomePageState extends State<HomePage> {
             spacing: gutter,
             runSpacing: gutter,
             children: [
-              for (final item in grouped[cat]!)
+              for (final item in grouped[cats[i]]!)
                 SizedBox(
                   width: cols == 1 ? double.infinity : cardW,
                   child: _MenuCard(item: item),
@@ -256,6 +273,11 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
         const SizedBox(height: 16),
+        if (showBanners && i + 1 == bannerAfter)
+          const Padding(
+            padding: EdgeInsets.only(top: 8, bottom: 8),
+            child: PromoBannerCarousel(),
+          ),
       ],
     ];
   }
@@ -322,72 +344,6 @@ class _HomePageState extends State<HomePage> {
         ),
       );
 
-  // ── BOTTOM NAV (Menu / Search / Orders) ────────────────────────────────────
-  Widget _buildBottomNav() {
-    return Container(
-      decoration: BoxDecoration(
-        color: BauhausTheme.white,
-        borderRadius:
-            const BorderRadius.vertical(top: Radius.circular(16)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 20,
-            offset: const Offset(0, -4),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        top: false,
-        child: SizedBox(
-          height: 64,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _navItem(Icons.menu_book, 'Menu',
-                  active: _selectedTab == 0,
-                  filled: true,
-                  onTap: () => setState(() => _selectedTab = 0)),
-              _navItem(Icons.search, 'Search', active: false, onTap: () {
-                setState(() => _selectedTab = 0);
-                Future.delayed(const Duration(milliseconds: 50),
-                    () => _searchFocus.requestFocus());
-              }),
-              _navItem(Icons.receipt_long, 'Orders',
-                  active: _selectedTab == 1,
-                  onTap: () => setState(() => _selectedTab = 1)),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _navItem(IconData icon, String label,
-      {required bool active, bool filled = false, required VoidCallback onTap}) {
-    final color =
-        active ? BauhausTheme.accentRed : BauhausTheme.onSurfaceVariant;
-    return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: color, size: 24),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-                color: color,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

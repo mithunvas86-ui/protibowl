@@ -498,6 +498,21 @@ class _ConfirmationPageState extends State<ConfirmationPage> {
                     ),
                   ),
                 ),
+                const SizedBox(height: 14),
+                Center(
+                  child: GestureDetector(
+                    onTap: () => context.go('/faq'),
+                    child: Text(
+                      'Payment or order issue?  Help & FAQ',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: BauhausTheme.mediumGrey,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
           );

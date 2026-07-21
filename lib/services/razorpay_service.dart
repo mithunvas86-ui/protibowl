@@ -34,6 +34,26 @@ class PlaceOrderResult {
       PlaceOrderResult(success: false, message: message);
 }
 
+/// Result of paying for a subscription plan (create → pay → verify).
+class SubscriptionPayResult {
+  final bool success;
+  final String message;
+  final String? subscriptionId;
+  final String? razorpayOrderId;
+  final String? razorpayPaymentId;
+
+  const SubscriptionPayResult({
+    required this.success,
+    required this.message,
+    this.subscriptionId,
+    this.razorpayOrderId,
+    this.razorpayPaymentId,
+  });
+
+  factory SubscriptionPayResult.fail(String message) =>
+      SubscriptionPayResult(success: false, message: message);
+}
+
 /// Online-payment flow for the **web** customer app — fully server-driven.
 ///
 ///   1. `razorpay-create-order` computes the price from the DB, creates the
@@ -130,6 +150,77 @@ class RazorpayService {
       return PlaceOrderResult.fail('Payment verification failed');
     } catch (e) {
       return PlaceOrderResult.fail('Verification error: $e');
+    }
+  }
+
+  /// Pays for a subscription PLAN — same server-driven shape as orders:
+  ///   1. `subscription-create-order` (price from DB, plan id only),
+  ///   2. Razorpay checkout.js,
+  ///   3. `subscription-verify-payment` (signature verified server-side).
+  /// The returned order/payment ids act as the bearer proof for the
+  /// onboarding-details submission that follows.
+  Future<SubscriptionPayResult> paySubscription({required String planId}) async {
+    if (!kIsWeb) {
+      return SubscriptionPayResult.fail(
+          'Online payment is only available on the web');
+    }
+    if (!globalContext.has('Razorpay')) {
+      return SubscriptionPayResult.fail(
+          'Payment library not loaded. Please refresh and try again.');
+    }
+
+    final String razorpayOrderId, keyId, currency;
+    final num amountPaise;
+    try {
+      final res = await _supabase.functions.invoke(
+        'subscription-create-order',
+        body: {'plan_id': planId},
+      );
+      final data = (res.data as Map?)?.cast<String, dynamic>() ?? {};
+      if (data['razorpayOrderId'] == null || data['keyId'] == null) {
+        return SubscriptionPayResult.fail(
+            data['error']?.toString() ?? 'Could not start payment');
+      }
+      razorpayOrderId = data['razorpayOrderId'] as String;
+      keyId = data['keyId'] as String;
+      amountPaise = (data['amount'] as num?) ?? 0;
+      currency = (data['currency'] as String?) ?? 'INR';
+    } catch (e) {
+      return SubscriptionPayResult.fail('Could not start payment: $e');
+    }
+
+    final payment = await _openCheckout(
+      keyId: keyId,
+      amountPaise: amountPaise,
+      currency: currency,
+      orderId: razorpayOrderId,
+      customerName: '',
+      customerPhone: '',
+    );
+    if (payment == null) return SubscriptionPayResult.fail('Payment cancelled');
+
+    try {
+      final res = await _supabase.functions.invoke(
+        'subscription-verify-payment',
+        body: {
+          'razorpay_order_id': payment['razorpay_order_id'],
+          'razorpay_payment_id': payment['razorpay_payment_id'],
+          'razorpay_signature': payment['razorpay_signature'],
+        },
+      );
+      final v = (res.data as Map?)?.cast<String, dynamic>() ?? {};
+      if (v['verified'] == true) {
+        return SubscriptionPayResult(
+          success: true,
+          message: 'Payment successful',
+          subscriptionId: v['subscriptionId']?.toString(),
+          razorpayOrderId: payment['razorpay_order_id'],
+          razorpayPaymentId: payment['razorpay_payment_id'],
+        );
+      }
+      return SubscriptionPayResult.fail('Payment verification failed');
+    } catch (e) {
+      return SubscriptionPayResult.fail('Verification error: $e');
     }
   }
 

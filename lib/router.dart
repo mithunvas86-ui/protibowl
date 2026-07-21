@@ -8,6 +8,10 @@ import 'pages/confirmation_page.dart';
 import 'pages/orders_page.dart';
 import 'pages/order_tracking_page.dart';
 import 'pages/customer_info_page.dart';
+import 'pages/faq_page.dart';
+import 'pages/subscription_page.dart';
+import 'pages/subscription_onboarding_page.dart';
+import 'pages/member_page.dart';
 import 'providers/customer_info_provider.dart';
 
 String? _redirectLogic(BuildContext context, GoRouterState state) {
@@ -62,6 +66,22 @@ final router = GoRouter(
     GoRoute(
       path: '/my-orders',
       builder: (context, state) => const OrderTrackingPage(),
+    ),
+    GoRoute(
+      path: '/faq',
+      builder: (context, state) => const FaqPage(),
+    ),
+    GoRoute(
+      path: '/subscribe',
+      builder: (context, state) => const SubscriptionPage(),
+    ),
+    GoRoute(
+      path: '/subscribe/details',
+      builder: (context, state) => const SubscriptionOnboardingPage(),
+    ),
+    GoRoute(
+      path: '/member',
+      builder: (context, state) => const MemberPage(),
     ),
   ],
 );

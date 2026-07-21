@@ -12,6 +12,7 @@ import 'providers/menu_provider.dart';
 import 'providers/cart_provider.dart';
 import 'providers/order_provider.dart';
 import 'providers/customer_info_provider.dart';
+import 'providers/subscription_provider.dart';
 import 'theme/bauhaus_theme.dart';
 import 'router.dart';
 
@@ -51,6 +52,7 @@ class MPROTIDiningUserApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => MenuProvider()),
         ChangeNotifierProvider(create: (_) => CartProvider()),
         ChangeNotifierProvider(create: (_) => OrderProvider()),
+        ChangeNotifierProvider(create: (_) => SubscriptionProvider()),
       ],
       child: MaterialApp.router(
         title: 'Proti Bowls',

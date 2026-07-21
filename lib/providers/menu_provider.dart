@@ -21,15 +21,20 @@ class MenuProvider extends ChangeNotifier {
 
   List<MenuItem> get filteredItems {
     var list = _selectedCategory == 'All'
-        ? _items
+        ? List<MenuItem>.from(_items)
         : _items.where((item) => item.category == _selectedCategory).toList();
     if (_searchQuery.isNotEmpty) {
+      // While searching, reveal matches even if they're sold out (so a customer
+      // can find a specific dish and see it's currently unavailable).
       final q = _searchQuery.toLowerCase();
       list = list
           .where((item) =>
               item.name.toLowerCase().contains(q) ||
               item.description.toLowerCase().contains(q))
           .toList();
+    } else {
+      // Normal browsing: hide sold-out / disabled items entirely.
+      list = list.where((item) => !item.isSoldOut).toList();
     }
     return list;
   }
