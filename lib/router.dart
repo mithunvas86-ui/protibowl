@@ -45,7 +45,6 @@ final router = GoRouter(
       path: '/product/:id',
       builder: (context, state) => ProductDetailPage(
         itemId: state.pathParameters['id']!,
-        tableId: state.uri.queryParameters['table'] ?? '',
       ),
     ),
     GoRoute(

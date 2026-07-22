@@ -9,9 +9,7 @@ import '../theme/bauhaus_theme.dart';
 
 class ProductDetailPage extends StatefulWidget {
   final String itemId;
-  final String tableId;
-  const ProductDetailPage(
-      {super.key, required this.itemId, required this.tableId});
+  const ProductDetailPage({super.key, required this.itemId});
 
   @override
   State<ProductDetailPage> createState() => _ProductDetailPageState();

@@ -217,8 +217,7 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
                           if (status == 'pending' || status == 'confirmed') ...[
                             const SizedBox(height: 12),
                             GestureDetector(
-                              onTap: () => _cancelOrder(
-                                  context, order['id'].toString()),
+                              onTap: () => _cancelOrder(context, order),
                               child: Container(
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 12),
@@ -257,7 +256,9 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
     );
   }
 
-  Future<void> _cancelOrder(BuildContext context, String orderId) async {
+  Future<void> _cancelOrder(
+      BuildContext context, Map<String, dynamic> order) async {
+    final orderId = order['id'].toString();
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -285,16 +286,17 @@ class _OrderTrackingPageState extends State<OrderTrackingPage> {
     );
 
     if (confirmed == true && mounted) {
-      final success =
-          await context.read<OrderProvider>().cancelOrder(orderId);
+      // null = cancelled successfully; otherwise an honest, specific reason
+      // from the server (e.g. already being prepared) — never a fake success.
+      final error = await context.read<OrderProvider>().cancelOrder(order);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              success ? 'Order cancelled.' : 'Failed to cancel order.',
+              error ?? 'Order cancelled.',
               style: GoogleFonts.inter(),
             ),
-            backgroundColor: success ? Colors.black : Colors.red,
+            backgroundColor: error == null ? Colors.black : Colors.red,
           ),
         );
       }

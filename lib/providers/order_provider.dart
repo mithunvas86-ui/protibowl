@@ -198,16 +198,30 @@ class OrderProvider extends ChangeNotifier {
     await fetchOrders();
   }
 
-  /// Customer-initiated cancel. Reflects locally; a server-side `cancel-order`
-  /// edge function is still TODO to also flip the DB row (anon can't write it).
-  Future<bool> cancelOrder(String orderId) async {
+  /// Customer-initiated cancel — calls the `cancel-order` edge function; the
+  /// server is the source of truth on whether it's still allowed (only while
+  /// pending/confirmed). Returns null on success, or a user-facing message
+  /// explaining why it was rejected (or that the request failed).
+  Future<String?> cancelOrder(Map<String, dynamic> order) async {
+    final supabaseId = order['supabase_id'] as String?;
+    final localId = order['id'] as String?;
+    if (supabaseId == null || localId == null) {
+      return 'This order can\'t be cancelled — try refreshing your orders.';
+    }
     try {
-      await _sharedOrders.updateOrderStatus(orderId, 'cancelled');
-      await fetchOrders();
-      return true;
+      final res = await SupabaseService.client.functions
+          .invoke('cancel-order', body: {'orderId': supabaseId});
+      final data = (res.data as Map?)?.cast<String, dynamic>() ?? {};
+      if (data['cancelled'] == true) {
+        await _sharedOrders.updateOrderStatus(localId, 'cancelled');
+        await fetchOrders();
+        return null;
+      }
+      return data['error']?.toString() ??
+          'This order can no longer be cancelled.';
     } catch (e) {
       debugPrint('Error cancelling order: $e');
-      return false;
+      return 'Could not reach the server — please try again.';
     }
   }
 
