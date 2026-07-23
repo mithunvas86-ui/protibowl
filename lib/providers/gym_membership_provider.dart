@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/razorpay_service.dart';
@@ -51,6 +52,30 @@ class GymMembershipPlan {
 class GymMembershipProvider extends ChangeNotifier {
   final _supabase = Supabase.instance.client;
   final _razorpay = RazorpayService();
+  late final StreamSubscription<AuthState> _authSub;
+
+  GymMembershipProvider() {
+    // On web, session restore from localStorage after a fresh page load
+    // (e.g. the reload triggered by switching browser tabs) can complete
+    // slightly after Supabase.initialize() returns — a synchronous
+    // isMemberLoggedIn check at that exact moment can miss it. Listening
+    // here instead reacts once the session is actually known, so the
+    // membership loads reliably instead of showing "no active membership".
+    _authSub = _supabase.auth.onAuthStateChange.listen((state) {
+      if (state.session != null) {
+        loadMemberData();
+      } else {
+        _myMembership = null;
+        notifyListeners();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _authSub.cancel();
+    super.dispose();
+  }
 
   List<GymMembershipPlan> _plans = [];
   bool _loadingPlans = false;
