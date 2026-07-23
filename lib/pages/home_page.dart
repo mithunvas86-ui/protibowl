@@ -127,7 +127,8 @@ class _HomePageState extends State<HomePage> {
         }
 
         final searching = _searchCtrl.text.isNotEmpty;
-        final featured = _featuredItem(menu);
+        final featured = _featuredItems(menu);
+        final exampleItem = featured.isNotEmpty ? featured.first : null;
 
         return RefreshIndicator(
           onRefresh: () => menu.fetchAll(),
@@ -142,14 +143,27 @@ class _HomePageState extends State<HomePage> {
                   if (!searching)
                     Padding(
                       padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-                      child: _GoldSavingsBanner(exampleItem: featured),
+                      child: _GoldSavingsBanner(exampleItem: exampleItem),
                     ),
 
                   // ── HERO ───────────────────────────────────────────
-                  if (featured != null && !searching)
+                  if (featured.isNotEmpty && !searching)
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-                      child: _HeroCard(item: featured),
+                      padding: const EdgeInsets.only(top: 16, bottom: 8),
+                      child: SizedBox(
+                        height: 280,
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          itemCount: featured.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(width: 12),
+                          itemBuilder: (context, i) => _HeroCard(
+                            item: featured[i],
+                            width: w > 480 ? 380 : w * 0.85,
+                          ),
+                        ),
+                      ),
                     ),
 
                   // ── SEARCH ─────────────────────────────────────────
@@ -247,13 +261,10 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  MenuItem? _featuredItem(MenuProvider menu) {
-    // Only show the hero when the admin has explicitly starred an item as the
-    // Featured Creation. If none is featured, returns null and the hero hides.
-    for (final i in menu.items) {
-      if (i.featured) return i;
-    }
-    return null;
+  List<MenuItem> _featuredItems(MenuProvider menu) {
+    // Every item the admin has starred as a Featured Creation — shown as a
+    // horizontal scroller. Empty when none are featured.
+    return menu.items.where((i) => i.featured).toList();
   }
 
   List<Widget> _buildSections(MenuProvider menu, double width,
@@ -456,7 +467,8 @@ class _GoldSavingsBanner extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 class _HeroCard extends StatelessWidget {
   final MenuItem item;
-  const _HeroCard({required this.item});
+  final double width;
+  const _HeroCard({required this.item, this.width = double.infinity});
 
   @override
   Widget build(BuildContext context) {
@@ -466,7 +478,7 @@ class _HeroCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         child: SizedBox(
           height: 280,
-          width: double.infinity,
+          width: width,
           child: Stack(
             fit: StackFit.expand,
             children: [
