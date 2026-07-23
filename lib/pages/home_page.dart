@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../models/menu_item.dart';
 import '../providers/menu_provider.dart';
 import '../providers/cart_provider.dart';
+import '../providers/gym_membership_provider.dart';
 import '../theme/bauhaus_theme.dart';
 import '../widgets/app_bottom_nav.dart';
 import '../widgets/floating_cart_bar.dart';
@@ -32,7 +33,14 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     _selectedTab = widget.initialTab;
     Future.microtask(() {
-      if (mounted) context.read<MenuProvider>().fetchAll();
+      if (!mounted) return;
+      context.read<MenuProvider>().fetchAll();
+      final gold = context.read<GymMembershipProvider>();
+      if (gold.isMemberLoggedIn) {
+        gold.loadMemberData();
+      } else {
+        gold.fetchPlans();
+      }
     });
   }
 
@@ -68,6 +76,19 @@ class _HomePageState extends State<HomePage> {
             ),
           ],
         ),
+        actions: [
+          Consumer<GymMembershipProvider>(
+            builder: (context, gold, _) => IconButton(
+              tooltip: gold.isMemberLoggedIn ? 'Gold membership' : 'Log in',
+              icon: gold.isMemberLoggedIn
+                  ? const Icon(Icons.workspace_premium,
+                      color: Color(0xFFD4A017))
+                  : const Icon(Icons.login, color: BauhausTheme.surfaceBlack),
+              onPressed: () => context.go('/member/gold'),
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: Stack(
         children: [
@@ -117,6 +138,13 @@ class _HomePageState extends State<HomePage> {
               return ListView(
                 padding: const EdgeInsets.only(bottom: 120),
                 children: [
+                  // ── GOLD SAVINGS BANNER ──────────────────────────────
+                  if (!searching)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                      child: _GoldSavingsBanner(exampleItem: featured),
+                    ),
+
                   // ── HERO ───────────────────────────────────────────
                   if (featured != null && !searching)
                     Padding(
@@ -344,6 +372,83 @@ class _HomePageState extends State<HomePage> {
         ),
       );
 
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Gold savings teaser — shown to non-members, links to the Gold sales page.
+// ─────────────────────────────────────────────────────────────────────────────
+class _GoldSavingsBanner extends StatelessWidget {
+  final MenuItem? exampleItem;
+  const _GoldSavingsBanner({this.exampleItem});
+
+  @override
+  Widget build(BuildContext context) {
+    final gold = context.watch<GymMembershipProvider>();
+    if (gold.isMemberLoggedIn || gold.plans.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    final plan = gold.plans.first;
+    if (plan.discountPercent <= 0) return const SizedBox.shrink();
+
+    final item = exampleItem;
+    final discounted =
+        item != null ? item.price * (1 - plan.discountPercent / 100) : null;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(BauhausTheme.radiusLg),
+      onTap: () => context.go('/member/gold'),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+            colors: [Color(0xFFF9D423), Color(0xFFD4A017)],
+          ),
+          borderRadius: BorderRadius.circular(BauhausTheme.radiusLg),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.workspace_premium, color: Colors.white, size: 22),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Gold members save ${plan.discountPercent.toStringAsFixed(0)}% + free delivery',
+                    style: BauhausTheme.body(
+                        size: 13, weight: FontWeight.w700, color: Colors.white),
+                  ),
+                  if (item != null && discounted != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Row(
+                        children: [
+                          Text('₹${item.price.toStringAsFixed(0)}',
+                              style: BauhausTheme.body(
+                                size: 12,
+                                color: Colors.white70,
+                              ).copyWith(
+                                  decoration: TextDecoration.lineThrough)),
+                          const SizedBox(width: 6),
+                          Text('₹${discounted.toStringAsFixed(0)} with Gold',
+                              style: BauhausTheme.body(
+                                  size: 12,
+                                  weight: FontWeight.w700,
+                                  color: Colors.white)),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 14),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

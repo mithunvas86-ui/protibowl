@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import '../providers/cart_provider.dart';
 import '../providers/order_provider.dart';
+import '../providers/gym_membership_provider.dart';
 import '../services/service_hours_service.dart';
 import '../theme/bauhaus_theme.dart';
 import '../widgets/status_animation.dart';
@@ -21,6 +22,16 @@ class OrderFormPage extends StatefulWidget {
 
 class _OrderFormPageState extends State<OrderFormPage> {
   bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      if (!mounted) return;
+      final gold = context.read<GymMembershipProvider>();
+      if (gold.isMemberLoggedIn) gold.loadMemberData();
+    });
+  }
 
   TextStyle _sg(double size, FontWeight weight, Color color,
           {double? spacing}) =>
@@ -158,42 +169,96 @@ class _OrderFormPageState extends State<OrderFormPage> {
                         BorderRadius.circular(BauhausTheme.radiusLg),
                     boxShadow: BauhausTheme.cardShadow,
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  child: Consumer<GymMembershipProvider>(
+                    builder: (context, gold, _) {
+                      final plan = (gold.myMembership?['gym_membership_plans']
+                              as Map?)
+                          ?.cast<String, dynamic>();
+                      final goldDiscount =
+                          (plan?['discount_percent'] as num?)?.toDouble() ??
+                              0;
+                      final displayTotal = goldDiscount > 0
+                          ? cart.total * (1 - goldDiscount / 100)
+                          : cart.total;
+
+                      return Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text('Total',
-                              style: BauhausTheme.heading(
-                                  size: 22, weight: FontWeight.w700)),
-                          Text('₹${cart.total.toStringAsFixed(0)}',
-                              style: BauhausTheme.body(
-                                  size: 24,
-                                  weight: FontWeight.w600,
-                                  color: BauhausTheme.accentRed)),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text('Total',
+                                  style: BauhausTheme.heading(
+                                      size: 22, weight: FontWeight.w700)),
+                              TweenAnimationBuilder<double>(
+                                tween: Tween(end: displayTotal),
+                                duration: const Duration(milliseconds: 400),
+                                curve: Curves.easeOut,
+                                builder: (context, value, _) => Text(
+                                    '₹${value.toStringAsFixed(0)}',
+                                    style: BauhausTheme.body(
+                                        size: 24,
+                                        weight: FontWeight.w600,
+                                        color: BauhausTheme.accentRed)),
+                              ),
+                            ],
+                          ),
+                          AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 300),
+                            child: goldDiscount > 0
+                                ? Padding(
+                                    key: const ValueKey('gold-badge'),
+                                    padding: const EdgeInsets.only(top: 6),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 10, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFD4A017),
+                                        borderRadius: BorderRadius.circular(
+                                            BauhausTheme.radiusPill),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(Icons.workspace_premium,
+                                              size: 13, color: Colors.white),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                              'GOLD DISCOUNT APPLIED · ${goldDiscount.toStringAsFixed(0)}% OFF',
+                                              style: _sg(
+                                                  10,
+                                                  FontWeight.w700,
+                                                  Colors.white,
+                                                  spacing: 0.3)),
+                                        ],
+                                      ),
+                                    ),
+                                  )
+                                : const SizedBox.shrink(
+                                    key: ValueKey('no-gold-badge')),
+                          ),
+                          Builder(builder: (context) {
+                            final saved = cart.items.fold<double>(
+                                0,
+                                (s, ci) => s +
+                                    (ci.item.discountPercent > 0
+                                        ? (ci.item.compareAtPrice -
+                                                ci.item.price) *
+                                            ci.quantity
+                                        : 0));
+                            if (saved <= 0) return const SizedBox.shrink();
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Text(
+                                  'You saved ₹${saved.toStringAsFixed(0)}',
+                                  style: _sg(12, FontWeight.w700,
+                                      const Color(0xFF2E7D32))),
+                            );
+                          }),
                         ],
-                      ),
-                      Builder(builder: (context) {
-                        final saved = cart.items.fold<double>(
-                            0,
-                            (s, ci) => s +
-                                (ci.item.discountPercent > 0
-                                    ? (ci.item.compareAtPrice -
-                                            ci.item.price) *
-                                        ci.quantity
-                                    : 0));
-                        if (saved <= 0) return const SizedBox.shrink();
-                        return Padding(
-                          padding: const EdgeInsets.only(top: 4),
-                          child: Text(
-                              'You saved ₹${saved.toStringAsFixed(0)}',
-                              style: _sg(12, FontWeight.w700,
-                                  const Color(0xFF2E7D32))),
-                        );
-                      }),
-                    ],
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(height: 28),
