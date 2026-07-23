@@ -329,8 +329,18 @@ class _OrderFormPageState extends State<OrderFormPage> {
   }
 
   void _showCustomerDialog(BuildContext context, double totalAmount) {
-    final nameCtrl = TextEditingController();
-    final phoneCtrl = TextEditingController();
+    // A logged-in Gold member's name/phone are already on file from their
+    // membership activation — no need to ask again at checkout.
+    final gold = context.read<GymMembershipProvider>();
+    final goldName = (gold.myMembership?['customer_name'] as String?) ?? '';
+    final goldPhone = (gold.myMembership?['phone'] as String?) ?? '';
+    final skipNamePhone = gold.isMemberLoggedIn &&
+        gold.myMembership != null &&
+        goldName.isNotEmpty &&
+        goldPhone.isNotEmpty;
+
+    final nameCtrl = TextEditingController(text: skipNamePhone ? goldName : '');
+    final phoneCtrl = TextEditingController(text: skipNamePhone ? goldPhone : '');
     final addressCtrl = TextEditingController();
     final landmarkCtrl = TextEditingController();
     final cityCtrl = TextEditingController();
@@ -379,34 +389,60 @@ class _OrderFormPageState extends State<OrderFormPage> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // ── NAME ────────────────────────────────────
-                    _label('FULL NAME'),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: nameCtrl,
-                      textCapitalization: TextCapitalization.words,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.allow(
-                            RegExp(r'[a-zA-Z ]')),
-                      ],
-                      decoration: _inputDeco('Enter your name'),
-                    ),
-                    const SizedBox(height: 14),
+                    // ── NAME / PHONE (skipped for Gold members — ──
+                    // already on file from their membership) ───────
+                    if (skipNamePhone) ...[
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFD4A017).withValues(alpha: 0.08),
+                          border: Border.all(
+                              color: const Color(0xFFD4A017), width: 1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.workspace_premium,
+                                size: 18, color: Color(0xFFD4A017)),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text('Ordering as $goldName · $goldPhone',
+                                  style: GoogleFonts.inter(
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w600)),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                    ] else ...[
+                      _label('FULL NAME'),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: nameCtrl,
+                        textCapitalization: TextCapitalization.words,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.allow(
+                              RegExp(r'[a-zA-Z ]')),
+                        ],
+                        decoration: _inputDeco('Enter your name'),
+                      ),
+                      const SizedBox(height: 14),
 
-                    // ── PHONE ───────────────────────────────────
-                    _label('PHONE NUMBER'),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: phoneCtrl,
-                      keyboardType: TextInputType.number,
-                      maxLength: 10,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                      ],
-                      decoration: _inputDeco('10-digit mobile number',
-                          counter: true),
-                    ),
-                    const SizedBox(height: 14),
+                      _label('PHONE NUMBER'),
+                      const SizedBox(height: 6),
+                      TextField(
+                        controller: phoneCtrl,
+                        keyboardType: TextInputType.number,
+                        maxLength: 10,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
+                        decoration: _inputDeco('10-digit mobile number',
+                            counter: true),
+                      ),
+                      const SizedBox(height: 14),
+                    ],
 
                     // ── ORDER TYPE ──────────────────────────────
                     _label('ORDER TYPE'),
