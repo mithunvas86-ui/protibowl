@@ -54,6 +54,29 @@ class SubscriptionPayResult {
       SubscriptionPayResult(success: false, message: message);
 }
 
+/// Result of paying for a Gold membership plan (create → pay only — unlike
+/// subscriptions, signature verification happens inside
+/// `gym-membership-activate` together with account creation, so the raw
+/// Razorpay ids are handed back unverified for that one call to consume).
+class GymMembershipPayResult {
+  final bool success;
+  final String message;
+  final String? razorpayOrderId;
+  final String? razorpayPaymentId;
+  final String? razorpaySignature;
+
+  const GymMembershipPayResult({
+    required this.success,
+    required this.message,
+    this.razorpayOrderId,
+    this.razorpayPaymentId,
+    this.razorpaySignature,
+  });
+
+  factory GymMembershipPayResult.fail(String message) =>
+      GymMembershipPayResult(success: false, message: message);
+}
+
 /// Online-payment flow for the **web** customer app — fully server-driven.
 ///
 ///   1. `razorpay-create-order` computes the price from the DB, creates the
@@ -222,6 +245,59 @@ class RazorpayService {
     } catch (e) {
       return SubscriptionPayResult.fail('Verification error: $e');
     }
+  }
+
+  /// Pays for a Gold membership PLAN — same server-driven shape as
+  /// subscriptions, but stops after checkout: `gym-membership-activate`
+  /// does signature verification + account creation in one call, so there's
+  /// no separate verify step here.
+  Future<GymMembershipPayResult> payGymMembership({required String planId}) async {
+    if (!kIsWeb) {
+      return GymMembershipPayResult.fail(
+          'Online payment is only available on the web');
+    }
+    if (!globalContext.has('Razorpay')) {
+      return GymMembershipPayResult.fail(
+          'Payment library not loaded. Please refresh and try again.');
+    }
+
+    final String razorpayOrderId, keyId, currency;
+    final num amountPaise;
+    try {
+      final res = await _supabase.functions.invoke(
+        'gym-membership-create-order',
+        body: {'plan_id': planId},
+      );
+      final data = (res.data as Map?)?.cast<String, dynamic>() ?? {};
+      if (data['razorpayOrderId'] == null || data['keyId'] == null) {
+        return GymMembershipPayResult.fail(
+            data['error']?.toString() ?? 'Could not start payment');
+      }
+      razorpayOrderId = data['razorpayOrderId'] as String;
+      keyId = data['keyId'] as String;
+      amountPaise = (data['amount'] as num?) ?? 0;
+      currency = (data['currency'] as String?) ?? 'INR';
+    } catch (e) {
+      return GymMembershipPayResult.fail('Could not start payment: $e');
+    }
+
+    final payment = await _openCheckout(
+      keyId: keyId,
+      amountPaise: amountPaise,
+      currency: currency,
+      orderId: razorpayOrderId,
+      customerName: '',
+      customerPhone: '',
+    );
+    if (payment == null) return GymMembershipPayResult.fail('Payment cancelled');
+
+    return GymMembershipPayResult(
+      success: true,
+      message: 'Payment successful',
+      razorpayOrderId: payment['razorpay_order_id'],
+      razorpayPaymentId: payment['razorpay_payment_id'],
+      razorpaySignature: payment['razorpay_signature'],
+    );
   }
 
   Future<Map<String, String>?> _openCheckout({

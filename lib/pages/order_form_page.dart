@@ -106,10 +106,27 @@ class _OrderFormPageState extends State<OrderFormPage> {
                                               size: 15,
                                               weight: FontWeight.w600)),
                                       const SizedBox(height: 2),
-                                      Text(
-                                          'x${ci.quantity} @ ₹${ci.item.price.toStringAsFixed(0)}',
-                                          style: _sg(12, FontWeight.w400,
-                                              BauhausTheme.mediumGrey)),
+                                      Row(
+                                        children: [
+                                          if (ci.item.discountPercent > 0) ...[
+                                            Text(
+                                                '₹${ci.item.compareAtPrice.toStringAsFixed(0)}',
+                                                style: _sg(12,
+                                                        FontWeight.w400,
+                                                        BauhausTheme
+                                                            .mediumGrey)
+                                                    .copyWith(
+                                                        decoration:
+                                                            TextDecoration
+                                                                .lineThrough)),
+                                            const SizedBox(width: 4),
+                                          ],
+                                          Text(
+                                              'x${ci.quantity} @ ₹${ci.item.price.toStringAsFixed(0)}',
+                                              style: _sg(12, FontWeight.w400,
+                                                  BauhausTheme.mediumGrey)),
+                                        ],
+                                      ),
                                     ],
                                   ),
                                 ),
@@ -141,18 +158,41 @@ class _OrderFormPageState extends State<OrderFormPage> {
                         BorderRadius.circular(BauhausTheme.radiusLg),
                     boxShadow: BauhausTheme.cardShadow,
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text('Total',
-                          style: BauhausTheme.heading(
-                              size: 22, weight: FontWeight.w700)),
-                      Text('₹${cart.total.toStringAsFixed(0)}',
-                          style: BauhausTheme.body(
-                              size: 24,
-                              weight: FontWeight.w600,
-                              color: BauhausTheme.accentRed)),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text('Total',
+                              style: BauhausTheme.heading(
+                                  size: 22, weight: FontWeight.w700)),
+                          Text('₹${cart.total.toStringAsFixed(0)}',
+                              style: BauhausTheme.body(
+                                  size: 24,
+                                  weight: FontWeight.w600,
+                                  color: BauhausTheme.accentRed)),
+                        ],
+                      ),
+                      Builder(builder: (context) {
+                        final saved = cart.items.fold<double>(
+                            0,
+                            (s, ci) => s +
+                                (ci.item.discountPercent > 0
+                                    ? (ci.item.compareAtPrice -
+                                            ci.item.price) *
+                                        ci.quantity
+                                    : 0));
+                        if (saved <= 0) return const SizedBox.shrink();
+                        return Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                              'You saved ₹${saved.toStringAsFixed(0)}',
+                              style: _sg(12, FontWeight.w700,
+                                  const Color(0xFF2E7D32))),
+                        );
+                      }),
                     ],
                   ),
                 ),

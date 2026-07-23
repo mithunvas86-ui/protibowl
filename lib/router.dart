@@ -12,6 +12,8 @@ import 'pages/faq_page.dart';
 import 'pages/subscription_page.dart';
 import 'pages/subscription_onboarding_page.dart';
 import 'pages/member_page.dart';
+import 'pages/member_chooser_page.dart';
+import 'pages/gold_membership_page.dart';
 import 'providers/customer_info_provider.dart';
 
 String? _redirectLogic(BuildContext context, GoRouterState state) {
@@ -80,6 +82,14 @@ final router = GoRouter(
     ),
     GoRoute(
       path: '/member',
+      builder: (context, state) => const MemberChooserPage(),
+    ),
+    GoRoute(
+      path: '/member/gold',
+      builder: (context, state) => const GoldMembershipPage(),
+    ),
+    GoRoute(
+      path: '/member/elite',
       builder: (context, state) => const MemberPage(),
     ),
   ],

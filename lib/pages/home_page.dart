@@ -541,14 +541,37 @@ class _MenuCardState extends State<_MenuCard> {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    Text(
-                      '₹${item.price.toStringAsFixed(0)}',
-                      style: GoogleFonts.inter(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w500,
-                        color: BauhausTheme.accentRed,
-                        letterSpacing: -0.3,
-                      ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        if (item.discountPercent > 0)
+                          Text(
+                            '₹${item.compareAtPrice.toStringAsFixed(0)}',
+                            style: GoogleFonts.inter(
+                              fontSize: 13,
+                              color: BauhausTheme.mediumGrey,
+                              decoration: TextDecoration.lineThrough,
+                            ),
+                          ),
+                        Text(
+                          '₹${item.price.toStringAsFixed(0)}',
+                          style: GoogleFonts.inter(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w500,
+                            color: BauhausTheme.accentRed,
+                            letterSpacing: -0.3,
+                          ),
+                        ),
+                        if (item.discountPercent > 0)
+                          Text(
+                            'SAVE ${item.discountPercent}%',
+                            style: GoogleFonts.inter(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF2E7D32),
+                            ),
+                          ),
+                      ],
                     ),
                   ],
                 ),
